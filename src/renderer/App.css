@@ -6,7 +6,295 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Force xterm.js terminal to be transparent */
+/* ============================================
+   CSS Variables - Dark Mode (Default)
+   ============================================ */
+:root {
+  /* Background colors */
+  --background: 0 0% 0%; /* Transparent/dark base */
+  --foreground: 0 0% 100%; /* White text */
+
+  /* Card/Surface colors - used for panels, cards, sidebars */
+  --card: 0 0% 100%; /* White with opacity in Tailwind */
+  --card-foreground: 0 0% 100%;
+
+  /* Muted colors - secondary text and backgrounds */
+  --muted: 0 0% 100%;
+  --muted-foreground: 0 0% 100%;
+
+  /* Border colors */
+  --border: 0 0% 100%;
+
+  /* Input colors */
+  --input: 0 0% 100%;
+  --input-foreground: 0 0% 100%;
+
+  /* Ring/focus colors */
+  --ring: 217 91% 60%;
+
+  /* Primary/Accent - Blue */
+  --primary: 217 91% 60%;
+  --primary-foreground: 0 0% 100%;
+
+  /* Success - Green */
+  --success: 142 71% 45%;
+  --success-foreground: 0 0% 100%;
+
+  /* Warning - Yellow */
+  --warning: 48 96% 53%;
+  --warning-foreground: 0 0% 0%;
+
+  /* Destructive - Red */
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+
+  /* Surface opacity levels for glass morphism effects */
+  --surface-opacity-5: 0.05;
+  --surface-opacity-10: 0.1;
+  --surface-opacity-15: 0.15;
+  --surface-opacity-20: 0.2;
+  --surface-opacity-30: 0.3;
+
+  /* Text opacity levels */
+  --text-opacity-90: 0.9;
+  --text-opacity-80: 0.8;
+  --text-opacity-70: 0.7;
+  --text-opacity-60: 0.6;
+  --text-opacity-50: 0.5;
+  --text-opacity-40: 0.4;
+  --text-opacity-30: 0.3;
+
+  /* Border opacity levels */
+  --border-opacity-5: 0.05;
+  --border-opacity-10: 0.1;
+  --border-opacity-20: 0.2;
+  --border-opacity-40: 0.4;
+
+  /* Semantic surface colors (computed with opacity) */
+  --surface-base: rgba(255, 255, 255, 0.05);
+  --surface-raised: rgba(255, 255, 255, 0.1);
+  --surface-overlay: rgba(255, 255, 255, 0.15);
+  --surface-elevated: rgba(255, 255, 255, 0.2);
+  --surface-sunken: rgba(0, 0, 0, 0.1);
+  --surface-sunken-deep: rgba(0, 0, 0, 0.3);
+
+  /* Semantic border colors */
+  --border-subtle: rgba(255, 255, 255, 0.05);
+  --border-default: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.2);
+  --border-focus: rgba(255, 255, 255, 0.4);
+
+  /* Semantic text colors */
+  --text-primary: rgba(255, 255, 255, 0.9);
+  --text-secondary: rgba(255, 255, 255, 0.7);
+  --text-tertiary: rgba(255, 255, 255, 0.5);
+  --text-muted: rgba(255, 255, 255, 0.4);
+  --text-faint: rgba(255, 255, 255, 0.3);
+
+  /* Status indicator colors */
+  --status-modified: #facc15; /* yellow-400 */
+  --status-added: #4ade80; /* green-400 */
+  --status-deleted: #f87171; /* red-400 */
+
+  /* Button colors */
+  --btn-primary: rgba(59, 130, 246, 0.8); /* blue-500/80 */
+  --btn-primary-hover: rgb(59, 130, 246); /* blue-500 */
+  --btn-success: rgba(34, 197, 94, 0.8); /* green-500/80 */
+  --btn-success-hover: rgb(34, 197, 94); /* green-500 */
+  --btn-danger: rgba(239, 68, 68, 0.8); /* red-500/80 */
+  --btn-danger-hover: rgb(239, 68, 68); /* red-500 */
+  --btn-disabled: rgba(255, 255, 255, 0.1);
+  --btn-disabled-text: rgba(255, 255, 255, 0.3);
+
+  /* Alert colors */
+  --alert-error-bg: rgba(239, 68, 68, 0.2);
+  --alert-error-border: rgba(239, 68, 68, 0.5);
+  --alert-error-text: #fecaca; /* red-200 */
+
+  /* Drop zone active state */
+  --dropzone-active-bg: rgba(59, 130, 246, 0.2);
+  --dropzone-active-border: rgba(96, 165, 250, 0.5);
+}
+
+/* ============================================
+   CSS Variables - Light Mode
+   ============================================ */
+@media (prefers-color-scheme: light) {
+  :root {
+    /* Background colors */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 9%;
+
+    /* Card/Surface colors */
+    --card: 0 0% 0%;
+    --card-foreground: 0 0% 9%;
+
+    /* Muted colors */
+    --muted: 0 0% 0%;
+    --muted-foreground: 0 0% 45%;
+
+    /* Border colors */
+    --border: 0 0% 0%;
+
+    /* Input colors */
+    --input: 0 0% 0%;
+    --input-foreground: 0 0% 9%;
+
+    /* Semantic surface colors (inverted for light mode) */
+    --surface-base: rgba(0, 0, 0, 0.03);
+    --surface-raised: rgba(0, 0, 0, 0.06);
+    --surface-overlay: rgba(0, 0, 0, 0.08);
+    --surface-elevated: rgba(0, 0, 0, 0.12);
+    --surface-sunken: rgba(0, 0, 0, 0.04);
+    --surface-sunken-deep: rgba(0, 0, 0, 0.08);
+
+    /* Semantic border colors */
+    --border-subtle: rgba(0, 0, 0, 0.05);
+    --border-default: rgba(0, 0, 0, 0.1);
+    --border-strong: rgba(0, 0, 0, 0.2);
+    --border-focus: rgba(0, 0, 0, 0.4);
+
+    /* Semantic text colors */
+    --text-primary: rgba(0, 0, 0, 0.9);
+    --text-secondary: rgba(0, 0, 0, 0.7);
+    --text-tertiary: rgba(0, 0, 0, 0.5);
+    --text-muted: rgba(0, 0, 0, 0.4);
+    --text-faint: rgba(0, 0, 0, 0.3);
+
+    /* Status indicator colors (slightly darker for light mode) */
+    --status-modified: #ca8a04; /* yellow-600 */
+    --status-added: #16a34a; /* green-600 */
+    --status-deleted: #dc2626; /* red-600 */
+
+    /* Button colors */
+    --btn-primary: rgba(37, 99, 235, 0.9); /* blue-600/90 */
+    --btn-primary-hover: rgb(37, 99, 235); /* blue-600 */
+    --btn-success: rgba(22, 163, 74, 0.9); /* green-600/90 */
+    --btn-success-hover: rgb(22, 163, 74); /* green-600 */
+    --btn-danger: rgba(220, 38, 38, 0.9); /* red-600/90 */
+    --btn-danger-hover: rgb(220, 38, 38); /* red-600 */
+    --btn-disabled: rgba(0, 0, 0, 0.1);
+    --btn-disabled-text: rgba(0, 0, 0, 0.3);
+
+    /* Alert colors */
+    --alert-error-bg: rgba(239, 68, 68, 0.1);
+    --alert-error-border: rgba(239, 68, 68, 0.3);
+    --alert-error-text: #991b1b; /* red-800 */
+
+    /* Drop zone active state */
+    --dropzone-active-bg: rgba(59, 130, 246, 0.1);
+    --dropzone-active-border: rgba(59, 130, 246, 0.4);
+  }
+}
+
+/* ============================================
+   Class-based theme switching (optional)
+   ============================================ */
+.dark {
+  /* Background colors */
+  --background: 0 0% 0%;
+  --foreground: 0 0% 100%;
+
+  /* Semantic surface colors */
+  --surface-base: rgba(255, 255, 255, 0.05);
+  --surface-raised: rgba(255, 255, 255, 0.1);
+  --surface-overlay: rgba(255, 255, 255, 0.15);
+  --surface-elevated: rgba(255, 255, 255, 0.2);
+  --surface-sunken: rgba(0, 0, 0, 0.1);
+  --surface-sunken-deep: rgba(0, 0, 0, 0.3);
+
+  /* Semantic border colors */
+  --border-subtle: rgba(255, 255, 255, 0.05);
+  --border-default: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.2);
+  --border-focus: rgba(255, 255, 255, 0.4);
+
+  /* Semantic text colors */
+  --text-primary: rgba(255, 255, 255, 0.9);
+  --text-secondary: rgba(255, 255, 255, 0.7);
+  --text-tertiary: rgba(255, 255, 255, 0.5);
+  --text-muted: rgba(255, 255, 255, 0.4);
+  --text-faint: rgba(255, 255, 255, 0.3);
+
+  /* Status indicator colors */
+  --status-modified: #facc15;
+  --status-added: #4ade80;
+  --status-deleted: #f87171;
+
+  /* Button colors */
+  --btn-primary: rgba(59, 130, 246, 0.8);
+  --btn-primary-hover: rgb(59, 130, 246);
+  --btn-success: rgba(34, 197, 94, 0.8);
+  --btn-success-hover: rgb(34, 197, 94);
+  --btn-danger: rgba(239, 68, 68, 0.8);
+  --btn-danger-hover: rgb(239, 68, 68);
+  --btn-disabled: rgba(255, 255, 255, 0.1);
+  --btn-disabled-text: rgba(255, 255, 255, 0.3);
+
+  /* Alert colors */
+  --alert-error-bg: rgba(239, 68, 68, 0.2);
+  --alert-error-border: rgba(239, 68, 68, 0.5);
+  --alert-error-text: #fecaca;
+
+  /* Drop zone active state */
+  --dropzone-active-bg: rgba(59, 130, 246, 0.2);
+  --dropzone-active-border: rgba(96, 165, 250, 0.5);
+}
+
+.light {
+  /* Background colors */
+  --background: 0 0% 100%;
+  --foreground: 0 0% 9%;
+
+  /* Semantic surface colors */
+  --surface-base: rgba(0, 0, 0, 0.03);
+  --surface-raised: rgba(0, 0, 0, 0.06);
+  --surface-overlay: rgba(0, 0, 0, 0.08);
+  --surface-elevated: rgba(0, 0, 0, 0.12);
+  --surface-sunken: rgba(0, 0, 0, 0.04);
+  --surface-sunken-deep: rgba(0, 0, 0, 0.08);
+
+  /* Semantic border colors */
+  --border-subtle: rgba(0, 0, 0, 0.05);
+  --border-default: rgba(0, 0, 0, 0.1);
+  --border-strong: rgba(0, 0, 0, 0.2);
+  --border-focus: rgba(0, 0, 0, 0.4);
+
+  /* Semantic text colors */
+  --text-primary: rgba(0, 0, 0, 0.9);
+  --text-secondary: rgba(0, 0, 0, 0.7);
+  --text-tertiary: rgba(0, 0, 0, 0.5);
+  --text-muted: rgba(0, 0, 0, 0.4);
+  --text-faint: rgba(0, 0, 0, 0.3);
+
+  /* Status indicator colors */
+  --status-modified: #ca8a04;
+  --status-added: #16a34a;
+  --status-deleted: #dc2626;
+
+  /* Button colors */
+  --btn-primary: rgba(37, 99, 235, 0.9);
+  --btn-primary-hover: rgb(37, 99, 235);
+  --btn-success: rgba(22, 163, 74, 0.9);
+  --btn-success-hover: rgb(22, 163, 74);
+  --btn-danger: rgba(220, 38, 38, 0.9);
+  --btn-danger-hover: rgb(220, 38, 38);
+  --btn-disabled: rgba(0, 0, 0, 0.1);
+  --btn-disabled-text: rgba(0, 0, 0, 0.3);
+
+  /* Alert colors */
+  --alert-error-bg: rgba(239, 68, 68, 0.1);
+  --alert-error-border: rgba(239, 68, 68, 0.3);
+  --alert-error-text: #991b1b;
+
+  /* Drop zone active state */
+  --dropzone-active-bg: rgba(59, 130, 246, 0.1);
+  --dropzone-active-border: rgba(59, 130, 246, 0.4);
+}
+
+/* ============================================
+   Force xterm.js terminal to be transparent
+   ============================================ */
 .xterm {
   background-color: transparent !important;
 }

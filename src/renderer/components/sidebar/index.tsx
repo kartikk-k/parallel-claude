@@ -36,7 +36,7 @@ export default function Sidebar({
   onGoHome,
 }: SidebarProps) {
   return (
-    <div className="w-64 flex flex-col bg-black/10 backdrop-blur-xl border-r border-white/10">
+    <div className="w-64 flex flex-col bg-surface-sunken backdrop-blur-xl border-r border-border">
       <SidebarHeader repository={repository} />
 
       <SidebarNavigation

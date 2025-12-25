@@ -113,7 +113,7 @@ export default function Terminal({ className = '', sessionId, repositoryId, auto
   }, [sessionId, repositoryId]);
 
   return (
-    <div className={`w-full h-full p-2 bg-black/10 ${className}`}>
+    <div className={`w-full h-full p-2 bg-surface-sunken ${className}`}>
       <div ref={terminalRef} className="w-full h-full" />
     </div>
   );

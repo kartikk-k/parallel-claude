@@ -11,14 +11,14 @@ interface SidebarHeaderProps {
 
 export default function SidebarHeader({ repository }: SidebarHeaderProps) {
   return (
-    <div className="px-4 py-3 border-b border-white/10">
+    <div className="px-4 py-3 border-b border-border">
       {repository ? (
         <div>
-          <h2 className="text-sm font-medium text-white/90 truncate">{repository.name}</h2>
-          <p className="text-xs text-white/40 truncate font-mono">{repository.sourcePath}</p>
+          <h2 className="text-sm font-medium text-text-primary truncate">{repository.name}</h2>
+          <p className="text-xs text-text-muted truncate font-mono">{repository.sourcePath}</p>
         </div>
       ) : (
-        <h2 className="text-sm font-medium text-white/90">Terminal</h2>
+        <h2 className="text-sm font-medium text-text-primary">Terminal</h2>
       )}
     </div>
   );

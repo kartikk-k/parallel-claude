@@ -150,7 +150,7 @@ export default function RepositoryView() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-transparent text-white">
+      <div className="flex items-center justify-center h-screen bg-transparent text-text-primary">
         <div className="text-2xl">Loading repository...</div>
       </div>
     );
@@ -158,11 +158,11 @@ export default function RepositoryView() {
 
   if (error || !repository) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen bg-transparent text-white">
+      <div className="flex flex-col items-center justify-center h-screen bg-transparent text-text-primary">
         <div className="text-2xl mb-4">{error || 'Repository not found'}</div>
         <button
           onClick={handleGoHome}
-          className="px-6 py-3 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
+          className="px-6 py-3 bg-surface-raised hover:bg-surface-elevated rounded-lg transition-colors"
         >
           Go Home
         </button>
@@ -171,7 +171,7 @@ export default function RepositoryView() {
   }
 
   return (
-    <div className="flex h-screen text-white">
+    <div className="flex h-screen text-text-primary">
       {/* Left Sidebar */}
       <Sidebar
         repository={repository}
@@ -193,12 +193,12 @@ export default function RepositoryView() {
             repositoryId={repositoryId!}
           />
         ) : (
-          <div className="flex items-center justify-center h-full text-white/50">
+          <div className="flex items-center justify-center h-full text-text-tertiary">
             <div className="text-center">
               <p className="text-xl mb-4">No sessions yet</p>
               <button
                 onClick={() => handleCreateSession()}
-                className="px-6 py-3 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
+                className="px-6 py-3 bg-surface-raised hover:bg-surface-elevated rounded-lg transition-colors"
               >
                 Create First Session
               </button>

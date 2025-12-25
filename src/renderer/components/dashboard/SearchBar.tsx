@@ -12,10 +12,10 @@ export default function SearchBar({ value, onChange }: SearchBarProps) {
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder="Search projects and sessions..."
-          className="w-full px-6 py-4 bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl text-white placeholder-white/40 focus:outline-none focus:border-white/40 transition-colors"
+          className="w-full px-6 py-4 bg-surface-raised backdrop-blur-xl border border-border-strong rounded-xl text-text-primary placeholder-text-muted focus:outline-none focus:border-border-focus transition-colors"
         />
         <svg
-          className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40"
+          className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"

@@ -30,9 +30,9 @@ export default function RepositoryGrid({
 }: RepositoryGridProps) {
   return (
     <div className="mb-12">
-      <h2 className="text-xl font-medium mb-4 text-white/80">{title}</h2>
+      <h2 className="text-xl font-medium mb-4 text-text-secondary">{title}</h2>
       {repositories.length === 0 ? (
-        <div className="text-center py-12 text-white/50">
+        <div className="text-center py-12 text-text-tertiary">
           {emptyMessage}
         </div>
       ) : (

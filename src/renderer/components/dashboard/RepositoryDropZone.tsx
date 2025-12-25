@@ -47,14 +47,14 @@ export default function RepositoryDropZone({ onSelectRepository, onDropRepositor
         onClick={onSelectRepository}
         className={`w-full p-6 backdrop-blur-xl h-40 border-2 border-dashed rounded-xl transition-all flex items-center justify-center gap-3 cursor-pointer ${
           isDragging
-            ? 'bg-blue-500/20 border-blue-400/50'
-            : 'bg-white/10 hover:bg-white/20 border-white/20'
+            ? 'bg-dropzone-active-bg border-dropzone-active-border'
+            : 'bg-surface-raised hover:bg-surface-elevated border-border-strong'
         }`}
       >
-       <svg xmlns="http://www.w3.org/2000/svg" className='size-5' x="0px" y="0px" width="12px" height="12px" viewBox="0 0 12 12"><path d="m2.75,2.75h2.864l-.298-.636c-.247-.527-.776-.864-1.358-.864h-1.708c-.828,0-1.5.672-1.5,1.5v2c0-1.105.895-2,2-2Z" fill="rgba(255, 255, 255, 1)" stroke-width="0" data-color="color-2"></path><path d="m.75,4.75v-2c0-.828.672-1.5,1.5-1.5h1.708c.582,0,1.111.337,1.358.864l.298.636" fill="none" stroke="rgba(255, 255, 255, 1)" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" data-color="color-2"></path><path d="m2.75,2.75h6.5c1.105,0,2,.895,2,2v3.5c0,1.105-.895,2-2,2H2.75c-1.105,0-2-.895-2-2v-3.5c0-1.105.895-2,2-2Z" fill="none" stroke="rgba(255, 255, 255, 1)" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"></path></svg>
+       <svg xmlns="http://www.w3.org/2000/svg" className='size-5 text-text-primary' x="0px" y="0px" width="12px" height="12px" viewBox="0 0 12 12"><path d="m2.75,2.75h2.864l-.298-.636c-.247-.527-.776-.864-1.358-.864h-1.708c-.828,0-1.5.672-1.5,1.5v2c0-1.105.895-2,2-2Z" fill="currentColor" strokeWidth="0" data-color="color-2"></path><path d="m.75,4.75v-2c0-.828.672-1.5,1.5-1.5h1.708c.582,0,1.111.337,1.358.864l.298.636" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" data-color="color-2"></path><path d="m2.75,2.75h6.5c1.105,0,2,.895,2,2v3.5c0,1.105-.895,2-2,2H2.75c-1.105,0-2-.895-2-2v-3.5c0-1.105.895-2,2-2Z" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5"></path></svg>
         {isDragging ? 'Drop folder here' : 'Select Git Repository'}
       </div>
-      <p className="text-center text-sm text-white/40 mt-2">
+      <p className="text-center text-sm text-text-muted mt-2">
         Click to browse or drag and drop a folder
       </p>
     </div>

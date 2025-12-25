@@ -106,7 +106,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-transparent text-white p-8">
+    <div className="min-h-screen bg-transparent text-text-primary p-8">
       <div className="max-w-5xl mx-auto">
         <DashboardHeader />
 
