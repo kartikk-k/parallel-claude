@@ -5,9 +5,11 @@ import '@xterm/xterm/css/xterm.css';
 
 interface TerminalProps {
   className?: string;
+  sessionId: string;
+  autoRunCommand?: string;
 }
 
-export default function Terminal({ className = '' }: TerminalProps) {
+export default function Terminal({ className = '', sessionId, autoRunCommand }: TerminalProps) {
   const terminalRef = useRef<HTMLDivElement>(null);
   const xtermRef = useRef<XTerm | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
@@ -53,14 +55,18 @@ export default function Terminal({ className = '' }: TerminalProps) {
     fitAddonRef.current = fitAddon;
 
     // Request a new terminal session from main process
-    window.electron?.ipcRenderer.sendMessage('terminal-create');
+    window.electron?.ipcRenderer.sendMessage('terminal-create', sessionId);
 
-    // Handle data from terminal
+    // Handle data from terminal - filter by sessionId
     const unsubscribeData = window.electron?.ipcRenderer.on(
       'terminal-data',
       (...args: unknown[]) => {
-        const data = args[0] as string;
-        xterm.write(data);
+        const receivedSessionId = args[0] as string;
+        const data = args[1] as string;
+
+        if (receivedSessionId === sessionId) {
+          xterm.write(data);
+        }
       }
     );
 
@@ -68,21 +74,33 @@ export default function Terminal({ className = '' }: TerminalProps) {
     const unsubscribeExit = window.electron?.ipcRenderer.on(
       'terminal-exit',
       (...args: unknown[]) => {
-        const exitCode = args[0] as number;
-        xterm.write(`\r\n\r\n[Process exited with code ${exitCode}]\r\n`);
+        const receivedSessionId = args[0] as string;
+        const exitCode = args[1] as number;
+
+        if (receivedSessionId === sessionId) {
+          xterm.write(`\r\n\r\n[Process exited with code ${exitCode}]\r\n`);
+        }
       }
     );
 
+    // Auto-run command if specified
+    if (autoRunCommand) {
+      // Wait a bit for the shell to be ready, then send the command
+      setTimeout(() => {
+        window.electron?.ipcRenderer.sendMessage('terminal-input', sessionId, autoRunCommand + '\r');
+      }, 500);
+    }
+
     // Send user input to terminal
     xterm.onData((data) => {
-      window.electron?.ipcRenderer.sendMessage('terminal-input', data);
+      window.electron?.ipcRenderer.sendMessage('terminal-input', sessionId, data);
     });
 
     // Handle window resize
     const handleResize = () => {
       fitAddon.fit();
       if (xterm.rows && xterm.cols) {
-        window.electron?.ipcRenderer.sendMessage('terminal-resize', {
+        window.electron?.ipcRenderer.sendMessage('terminal-resize', sessionId, {
           cols: xterm.cols,
           rows: xterm.rows,
         });
@@ -96,10 +114,10 @@ export default function Terminal({ className = '' }: TerminalProps) {
       window.removeEventListener('resize', handleResize);
       if (unsubscribeData) unsubscribeData();
       if (unsubscribeExit) unsubscribeExit();
-      window.electron?.ipcRenderer.sendMessage('terminal-destroy');
+      window.electron?.ipcRenderer.sendMessage('terminal-destroy', sessionId);
       xterm.dispose();
     };
-  }, []);
+  }, [sessionId, autoRunCommand]);
 
   return (
     <div className={`w-full h-full ${className}`}>

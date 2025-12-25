@@ -35,7 +35,9 @@ class AppUpdater {
 let mainWindow: BrowserWindow | null = null;
 let previousAppBundleId: string | null = null; // Store the previous focused app bundle ID
 let movementShortcutsRegistered = false; // Track if movement shortcuts are registered
-let ptyProcess: pty.IPty | null = null; // Terminal process
+
+// Map of terminal sessions by sessionId
+const ptyProcesses = new Map<string, pty.IPty>();
 
 // Function to get the currently active application bundle ID (macOS)
 const getActiveAppBundleId = (): Promise<string | null> => {
@@ -74,18 +76,20 @@ ipcMain.on('ipc-example', async (event, arg) => {
 });
 
 // Terminal IPC handlers
-ipcMain.on('terminal-create', (event) => {
-  if (ptyProcess) {
-    ptyProcess.kill();
+ipcMain.on('terminal-create', (event, sessionId: string) => {
+  // Kill existing session if any
+  if (ptyProcesses.has(sessionId)) {
+    ptyProcesses.get(sessionId)?.kill();
+    ptyProcesses.delete(sessionId);
   }
 
   const shell = process.platform === 'win32' ? 'powershell.exe' : (process.env.SHELL || '/bin/zsh');
   const home = os.homedir();
 
-  console.log('Creating PTY with shell:', shell, 'in', home);
+  console.log(`Creating PTY for session ${sessionId} with shell:`, shell, 'in', home);
 
   try {
-    ptyProcess = pty.spawn(shell, [], {
+    const ptyProcess = pty.spawn(shell, [], {
       name: 'xterm-256color',
       cols: 80,
       rows: 30,
@@ -95,47 +99,52 @@ ipcMain.on('terminal-create', (event) => {
 
     ptyProcess.onData((data) => {
       if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('terminal-data', data);
+        mainWindow.webContents.send('terminal-data', sessionId, data);
       }
     });
 
     ptyProcess.onExit(({ exitCode }) => {
-      console.log('PTY exited with code:', exitCode);
+      console.log(`PTY session ${sessionId} exited with code:`, exitCode);
       if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('terminal-exit', exitCode);
+        mainWindow.webContents.send('terminal-exit', sessionId, exitCode);
       }
-      ptyProcess = null;
+      ptyProcesses.delete(sessionId);
     });
 
-    console.log('PTY created successfully');
+    ptyProcesses.set(sessionId, ptyProcess);
+    console.log(`PTY session ${sessionId} created successfully`);
   } catch (error) {
-    console.error('Failed to create PTY:', error);
+    console.error(`Failed to create PTY session ${sessionId}:`, error);
     if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send('terminal-data', `Error creating terminal: ${error}\r\n`);
+      mainWindow.webContents.send('terminal-data', sessionId, `Error creating terminal: ${error}\r\n`);
     }
   }
 });
 
-ipcMain.on('terminal-input', (event, data) => {
+ipcMain.on('terminal-input', (event, sessionId: string, data: string) => {
+  const ptyProcess = ptyProcesses.get(sessionId);
   if (ptyProcess) {
     ptyProcess.write(data);
   }
 });
 
-ipcMain.on('terminal-resize', (event, { cols, rows }) => {
+ipcMain.on('terminal-resize', (event, sessionId: string, { cols, rows }: { cols: number; rows: number }) => {
+  const ptyProcess = ptyProcesses.get(sessionId);
   if (ptyProcess) {
     try {
       ptyProcess.resize(cols, rows);
     } catch (error) {
-      console.error('Failed to resize PTY:', error);
+      console.error(`Failed to resize PTY session ${sessionId}:`, error);
     }
   }
 });
 
-ipcMain.on('terminal-destroy', () => {
+ipcMain.on('terminal-destroy', (event, sessionId: string) => {
+  const ptyProcess = ptyProcesses.get(sessionId);
   if (ptyProcess) {
     ptyProcess.kill();
-    ptyProcess = null;
+    ptyProcesses.delete(sessionId);
+    console.log(`PTY session ${sessionId} destroyed`);
   }
 });
 
