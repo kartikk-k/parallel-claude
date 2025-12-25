@@ -1,0 +1,109 @@
+import { useEffect, useRef } from 'react';
+import { Terminal as XTerm } from '@xterm/xterm';
+import { FitAddon } from '@xterm/addon-fit';
+import '@xterm/xterm/css/xterm.css';
+
+interface TerminalProps {
+  className?: string;
+}
+
+export default function Terminal({ className = '' }: TerminalProps) {
+  const terminalRef = useRef<HTMLDivElement>(null);
+  const xtermRef = useRef<XTerm | null>(null);
+  const fitAddonRef = useRef<FitAddon | null>(null);
+
+  useEffect(() => {
+    if (!terminalRef.current) return;
+    // Initialize xterm
+    const xterm = new XTerm({
+      cursorBlink: true,
+      fontSize: 14,
+      fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+      theme: {
+        background: '#1e1e1e',
+        foreground: '#d4d4d4',
+        cursor: '#d4d4d4',
+        black: '#000000',
+        red: '#cd3131',
+        green: '#0dbc79',
+        yellow: '#e5e510',
+        blue: '#2472c8',
+        magenta: '#bc3fbc',
+        cyan: '#11a8cd',
+        white: '#e5e5e5',
+        brightBlack: '#666666',
+        brightRed: '#f14c4c',
+        brightGreen: '#23d18b',
+        brightYellow: '#f5f543',
+        brightBlue: '#3b8eea',
+        brightMagenta: '#d670d6',
+        brightCyan: '#29b8db',
+        brightWhite: '#e5e5e5',
+      },
+      allowProposedApi: true,
+    });
+
+    const fitAddon = new FitAddon();
+    xterm.loadAddon(fitAddon);
+
+    xterm.open(terminalRef.current);
+    fitAddon.fit();
+
+    xtermRef.current = xterm;
+    fitAddonRef.current = fitAddon;
+
+    // Request a new terminal session from main process
+    window.electron?.ipcRenderer.sendMessage('terminal-create');
+
+    // Handle data from terminal
+    const unsubscribeData = window.electron?.ipcRenderer.on(
+      'terminal-data',
+      (...args: unknown[]) => {
+        const data = args[0] as string;
+        xterm.write(data);
+      }
+    );
+
+    // Handle terminal exit
+    const unsubscribeExit = window.electron?.ipcRenderer.on(
+      'terminal-exit',
+      (...args: unknown[]) => {
+        const exitCode = args[0] as number;
+        xterm.write(`\r\n\r\n[Process exited with code ${exitCode}]\r\n`);
+      }
+    );
+
+    // Send user input to terminal
+    xterm.onData((data) => {
+      window.electron?.ipcRenderer.sendMessage('terminal-input', data);
+    });
+
+    // Handle window resize
+    const handleResize = () => {
+      fitAddon.fit();
+      if (xterm.rows && xterm.cols) {
+        window.electron?.ipcRenderer.sendMessage('terminal-resize', {
+          cols: xterm.cols,
+          rows: xterm.rows,
+        });
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      if (unsubscribeData) unsubscribeData();
+      if (unsubscribeExit) unsubscribeExit();
+      window.electron?.ipcRenderer.sendMessage('terminal-destroy');
+      xterm.dispose();
+    };
+  }, []);
+
+  return (
+    <div className={`w-full h-full ${className}`}>
+      <div ref={terminalRef} className="w-full h-full" />
+    </div>
+  );
+}
