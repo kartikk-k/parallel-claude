@@ -32,7 +32,7 @@ export interface Repository {
 }
 
 export interface SessionMetadata {
-  id: string;
+  id: string; // UUID - also used as Claude Code session ID
   repositoryId: string;
   title: string;
   branchName: string;
@@ -45,6 +45,7 @@ export interface SessionMetadata {
   isRunning: boolean;
   filesChanged: number;
   status: 'active' | 'idle' | 'merged' | 'archived';
+  claudeSessionStarted?: boolean; // Track if Claude session has been started
 }
 
 export interface AppConfig {

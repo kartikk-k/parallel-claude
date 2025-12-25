@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { v4 as uuidv4 } from 'uuid';
 import type { SessionMetadata, GitChanges, ProjectConfig } from '../types';
 import { StorageService } from './storage';
 import { GitService } from './git';
@@ -21,8 +22,8 @@ export class SessionService {
   }
 
   private generateSessionId(): string {
-    // Generate 6 random alphanumeric characters
-    return Math.random().toString(36).substring(2, 8);
+    // Generate UUID for session (also used as Claude Code session ID)
+    return uuidv4();
   }
 
   private generateBranchName(sessionId: string, title?: string): string {

@@ -135,8 +135,32 @@ ipcMain.on('terminal-create', async (event, sessionId: string, repositoryId: str
 
     // Auto-run command if specified
     if (session.autoRunCommand) {
-      setTimeout(() => {
-        ptyProcess.write(session.autoRunCommand + '\r');
+      setTimeout(async () => {
+        let command = session.autoRunCommand;
+
+        // If this is a claude command, add session management flags
+        if (session.autoRunCommand.includes('claude')) {
+          if (session.claudeSessionStarted) {
+            // Resume existing session using our session UUID
+            command = `${session.autoRunCommand} -r "${session.id}"`;
+            console.log(`Resuming Claude session: ${session.id}`);
+          } else {
+            // Start new session with our session UUID
+            command = `${session.autoRunCommand} --session-id "${session.id}"`;
+            console.log(`Starting Claude with session ID: ${session.id}`);
+
+            // Mark session as started
+            try {
+              await sessionService.updateSession(repositoryId, sessionId, {
+                claudeSessionStarted: true,
+              });
+            } catch (err) {
+              console.error('Failed to update claudeSessionStarted flag:', err);
+            }
+          }
+        }
+
+        ptyProcess.write(command + '\r');
       }, 500);
     }
   } catch (error) {
