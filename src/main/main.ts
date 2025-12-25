@@ -139,6 +139,7 @@ ipcMain.on('terminal-create', async (event, sessionId: string, repositoryId: str
         let command = session.autoRunCommand;
 
         // If this is a claude command, add session management flags
+        // @ts-ignore
         if (session.autoRunCommand.includes('claude')) {
           if (session.claudeSessionStarted) {
             // Resume existing session using our session UUID
