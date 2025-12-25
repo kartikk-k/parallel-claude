@@ -23,6 +23,9 @@ import * as pty from 'node-pty';
 import * as os from 'os';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
+import { StorageService, GitService, RepositoryService, SessionService } from './services';
+import { registerRepositoryHandlers } from './ipc/repositoryHandlers';
+import { registerSessionHandlers } from './ipc/sessionHandlers';
 
 class AppUpdater {
   constructor() {
@@ -38,6 +41,16 @@ let movementShortcutsRegistered = false; // Track if movement shortcuts are regi
 
 // Map of terminal sessions by sessionId
 const ptyProcesses = new Map<string, pty.IPty>();
+
+// Initialize services
+const storageService = new StorageService();
+const gitService = new GitService();
+const repositoryService = new RepositoryService(storageService, gitService);
+const sessionService = new SessionService(storageService, gitService, repositoryService);
+
+// Register IPC handlers
+registerRepositoryHandlers(repositoryService, gitService);
+registerSessionHandlers(sessionService, gitService);
 
 // Function to get the currently active application bundle ID (macOS)
 const getActiveAppBundleId = (): Promise<string | null> => {
@@ -76,24 +89,30 @@ ipcMain.on('ipc-example', async (event, arg) => {
 });
 
 // Terminal IPC handlers
-ipcMain.on('terminal-create', (event, sessionId: string) => {
+ipcMain.on('terminal-create', async (event, sessionId: string, repositoryId: string) => {
   // Kill existing session if any
   if (ptyProcesses.has(sessionId)) {
     ptyProcesses.get(sessionId)?.kill();
     ptyProcesses.delete(sessionId);
   }
 
-  const shell = process.platform === 'win32' ? 'powershell.exe' : (process.env.SHELL || '/bin/zsh');
-  const home = os.homedir();
-
-  console.log(`Creating PTY for session ${sessionId} with shell:`, shell, 'in', home);
-
   try {
+    // Get session metadata to retrieve working directory
+    const session = await sessionService.getSession(repositoryId, sessionId);
+    if (!session) {
+      throw new Error(`Session ${sessionId} not found`);
+    }
+
+    const shell = process.platform === 'win32' ? 'powershell.exe' : (process.env.SHELL || '/bin/zsh');
+    const workingDir = session.workingDirectory;
+
+    console.log(`Creating PTY for session ${sessionId} with shell:`, shell, 'in', workingDir);
+
     const ptyProcess = pty.spawn(shell, [], {
       name: 'xterm-256color',
       cols: 80,
       rows: 30,
-      cwd: home,
+      cwd: workingDir,
       env: process.env as any,
     });
 
@@ -113,6 +132,13 @@ ipcMain.on('terminal-create', (event, sessionId: string) => {
 
     ptyProcesses.set(sessionId, ptyProcess);
     console.log(`PTY session ${sessionId} created successfully`);
+
+    // Auto-run command if specified
+    if (session.autoRunCommand) {
+      setTimeout(() => {
+        ptyProcess.write(session.autoRunCommand + '\r');
+      }, 500);
+    }
   } catch (error) {
     console.error(`Failed to create PTY session ${sessionId}:`, error);
     if (mainWindow && !mainWindow.isDestroyed()) {
@@ -191,8 +217,8 @@ const createWindow = async () => {
   const { width: screenWidth, height: screenHeight } = primaryDisplay.workAreaSize;
   
   // Calculate window dimensions and position
-  const windowWidth = 900;
-  const windowHeight = screenHeight - 200; // Full height minus 20px padding on top and bottom
+  const windowWidth =   1000;
+  const windowHeight = screenHeight - 100; // Full height minus 20px padding on top and bottom
   const windowX = screenWidth - windowWidth - 20; // Right side with 20px padding
   const windowY = 50; // 20px padding from top
 

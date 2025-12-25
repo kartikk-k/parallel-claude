@@ -5,22 +5,33 @@ interface TerminalSession {
   title: string;
 }
 
+interface Repository {
+  id: string;
+  name: string;
+  sourcePath: string;
+  defaultBranch?: string;
+}
+
 interface SidebarProps {
+  repository?: Repository;
   sessions: TerminalSession[];
-  activeSessionId: string;
+  activeSessionId: string | null;
   onSessionSelect: (id: string) => void;
   onSessionClose: (id: string) => void;
-  onCreateNew: () => void;
+  onCreateSession: (title?: string) => void;
   onRenameSession: (id: string, newTitle: string) => void;
+  onGoHome?: () => void;
 }
 
 export default function Sidebar({
+  repository,
   sessions,
   activeSessionId,
   onSessionSelect,
   onSessionClose,
-  onCreateNew,
+  onCreateSession,
   onRenameSession,
+  onGoHome,
 }: SidebarProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
@@ -51,13 +62,20 @@ export default function Sidebar({
     <div className="w-64 flex flex-col bg-black/10 backdrop-blur-xl border-r border-white/10">
       {/* Header */}
       <div className="px-4 py-3 border-b border-white/10">
-        <h2 className="text-sm font-semibold text-white/90">Terminal</h2>
+        {repository ? (
+          <div>
+            <h2 className="text-sm font-semibold text-white/90 truncate">{repository.name}</h2>
+            <p className="text-xs text-white/50 truncate">{repository.sourcePath}</p>
+          </div>
+        ) : (
+          <h2 className="text-sm font-semibold text-white/90">Terminal</h2>
+        )}
       </div>
 
       {/* Navigation Items */}
       <div className="px-2 py-3 border-b border-white/10">
         <button
-          onClick={onCreateNew}
+          onClick={() => onCreateSession()}
           className="w-full px-3 py-2 flex items-center gap-3 text-sm text-white/80 hover:bg-white/10 rounded-md transition-colors"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -66,26 +84,17 @@ export default function Sidebar({
           New Session
         </button>
 
-        <button className="w-full px-3 py-2 flex items-center gap-3 text-sm text-white/80 hover:bg-white/10 rounded-md transition-colors">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-          </svg>
-          Open Folder
-        </button>
-
-        <button className="w-full px-3 py-2 flex items-center gap-3 text-sm text-white/80 hover:bg-white/10 rounded-md transition-colors">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-          </svg>
-          GitHub
-        </button>
-
-        <button className="w-full px-3 py-2 flex items-center gap-3 text-sm text-white/80 hover:bg-white/10 rounded-md transition-colors">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
-          </svg>
-          Support
-        </button>
+        {onGoHome && (
+          <button
+            onClick={onGoHome}
+            className="w-full px-3 py-2 flex items-center gap-3 text-sm text-white/80 hover:bg-white/10 rounded-md transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            </svg>
+            All Repositories
+          </button>
+        )}
       </div>
 
       {/* Sessions List */}

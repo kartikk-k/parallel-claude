@@ -6,10 +6,11 @@ import '@xterm/xterm/css/xterm.css';
 interface TerminalProps {
   className?: string;
   sessionId: string;
+  repositoryId: string;
   autoRunCommand?: string;
 }
 
-export default function Terminal({ className = '', sessionId, autoRunCommand }: TerminalProps) {
+export default function Terminal({ className = '', sessionId, repositoryId, autoRunCommand }: TerminalProps) {
   const terminalRef = useRef<HTMLDivElement>(null);
   const xtermRef = useRef<XTerm | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
@@ -55,7 +56,7 @@ export default function Terminal({ className = '', sessionId, autoRunCommand }: 
     fitAddonRef.current = fitAddon;
 
     // Request a new terminal session from main process
-    window.electron?.ipcRenderer.sendMessage('terminal-create', sessionId);
+    window.electron?.ipcRenderer.sendMessage('terminal-create', sessionId, repositoryId);
 
     // Handle data from terminal - filter by sessionId
     const unsubscribeData = window.electron?.ipcRenderer.on(
@@ -83,14 +84,6 @@ export default function Terminal({ className = '', sessionId, autoRunCommand }: 
       }
     );
 
-    // Auto-run command if specified
-    if (autoRunCommand) {
-      // Wait a bit for the shell to be ready, then send the command
-      setTimeout(() => {
-        window.electron?.ipcRenderer.sendMessage('terminal-input', sessionId, autoRunCommand + '\r');
-      }, 500);
-    }
-
     // Send user input to terminal
     xterm.onData((data) => {
       window.electron?.ipcRenderer.sendMessage('terminal-input', sessionId, data);
@@ -117,7 +110,7 @@ export default function Terminal({ className = '', sessionId, autoRunCommand }: 
       window.electron?.ipcRenderer.sendMessage('terminal-destroy', sessionId);
       xterm.dispose();
     };
-  }, [sessionId, autoRunCommand]);
+  }, [sessionId, repositoryId]);
 
   return (
     <div className={`w-full h-full p-2 bg-black/10 ${className}`}>
