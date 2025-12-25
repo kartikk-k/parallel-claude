@@ -22,7 +22,7 @@ export default function Terminal({ className = '', sessionId, autoRunCommand }: 
       fontSize: 14,
       fontFamily: 'Menlo, Monaco, "Courier New", monospace',
       theme: {
-        background: '#1e1e1e',
+        background: '#1a1a1a00',
         foreground: '#d4d4d4',
         cursor: '#d4d4d4',
         black: '#000000',
@@ -120,7 +120,7 @@ export default function Terminal({ className = '', sessionId, autoRunCommand }: 
   }, [sessionId, autoRunCommand]);
 
   return (
-    <div className={`w-full h-full ${className}`}>
+    <div className={`w-full h-full p-2 bg-black/10 ${className}`}>
       <div ref={terminalRef} className="w-full h-full" />
     </div>
   );

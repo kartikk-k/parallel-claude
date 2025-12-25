@@ -5,3 +5,16 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Force xterm.js terminal to be transparent */
+.xterm {
+  background-color: transparent !important;
+}
+
+.xterm .xterm-viewport {
+  background-color: transparent !important;
+}
+
+.xterm .xterm-screen {
+  background-color: transparent !important;
+}

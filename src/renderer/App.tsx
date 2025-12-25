@@ -2,6 +2,7 @@ import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
 import './App.css';
 import { useState, useEffect } from 'react';
 import Terminal from './components/Terminal';
+import Sidebar from './components/Sidebar';
 
 interface TerminalSession {
   id: string;
@@ -54,45 +55,23 @@ function Hello() {
     }
   };
 
-  return (
-    <div className="flex h-screen text-white bg-[#1e1e1e]">
-      {/* Sidebar */}
-      <div className="w-12 bg-[#252526] flex flex-col items-center py-2 border-r border-[#3e3e42]">
-        {/* Session buttons */}
-        {sessions.map((session, index) => (
-          <div key={session.id} className="relative group">
-            <button
-              onClick={() => setActiveSessionId(session.id)}
-              className={`w-10 h-10 rounded-md mb-2 flex items-center justify-center text-sm font-semibold transition-colors ${
-                activeSessionId === session.id
-                  ? 'bg-[#007acc] text-white'
-                  : 'bg-[#3e3e42] text-gray-400 hover:bg-[#505050]'
-              }`}
-              title={session.title}
-            >
-              {index + 1}
-            </button>
-            {sessions.length > 1 && (
-              <button
-                onClick={() => closeSession(session.id)}
-                className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-xs"
-                title="Close terminal"
-              >
-                ×
-              </button>
-            )}
-          </div>
-        ))}
+  const renameSession = (id: string, newTitle: string) => {
+    setSessions(sessions.map(s =>
+      s.id === id ? { ...s, title: newTitle } : s
+    ));
+  };
 
-        {/* New Terminal button */}
-        <button
-          onClick={createNewTerminal}
-          className="w-10 h-10 rounded-md flex items-center justify-center text-xl bg-[#3e3e42] text-gray-400 hover:bg-[#505050] hover:text-white transition-colors mt-auto"
-          title="New Terminal (runs claude-code)"
-        >
-          +
-        </button>
-      </div>
+  return (
+    <div className="flex h-screen text-white">
+      {/* Sidebar */}
+      <Sidebar
+        sessions={sessions}
+        activeSessionId={activeSessionId}
+        onSessionSelect={setActiveSessionId}
+        onSessionClose={closeSession}
+        onCreateNew={createNewTerminal}
+        onRenameSession={renameSession}
+      />
 
       {/* Terminal area */}
       <div className="flex-1 flex flex-col">
