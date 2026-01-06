@@ -94,6 +94,9 @@ export default function Workstation() {
     }
 
     try {
+      // Explicitly destroy the terminal process
+      window.electron?.ipcRenderer.sendMessage('terminal-destroy', sessionId);
+
       await window.electron.ipcRenderer.invoke(
         'session:delete',
         repositoryId,
@@ -180,13 +183,25 @@ export default function Workstation() {
         <div className='border-b border-white/20'>
         <Topbar />
         </div>
-        <div className='bg- neutral-900/80 flex-1'>
-        {activeSessionId ? (
-          <Terminal
-          key={activeSessionId}
-          sessionId={activeSessionId}
-          repositoryId={repositoryId!}
-          />
+        <div className='bg- neutral-900/80 flex-1 relative'>
+        {sessions.length > 0 ? (
+          // Render all terminals but only show the active one
+          sessions.map((session) => (
+            <div
+              key={session.id}
+              className="absolute inset-0"
+              style={{
+                visibility: session.id === activeSessionId ? 'visible' : 'hidden',
+                zIndex: session.id === activeSessionId ? 1 : 0,
+              }}
+            >
+              <Terminal
+                sessionId={session.id}
+                repositoryId={repositoryId!}
+                isActive={session.id === activeSessionId}
+              />
+            </div>
+          ))
         ) : (
           <div className="flex items-center justify-center h-full text-white/50">
             <div className="text-center">

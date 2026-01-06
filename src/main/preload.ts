@@ -5,12 +5,14 @@ import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
 export type Channels =
   | 'ipc-example'
   | 'window-focus'
-  | 'terminal-create'
+  | 'terminal-attach'
+  | 'terminal-detach'
   | 'terminal-input'
   | 'terminal-resize'
   | 'terminal-destroy'
   | 'terminal-data'
-  | 'terminal-exit';
+  | 'terminal-exit'
+  | 'terminal-attached';
 
 const electronHandler = {
   ipcRenderer: {

@@ -10,9 +10,10 @@ interface TerminalProps {
   sessionId: string;
   repositoryId: string;
   autoRunCommand?: string;
+  isActive?: boolean;
 }
 
-export default function Terminal({ className = '', sessionId, repositoryId, autoRunCommand }: TerminalProps) {
+export default function Terminal({ className = '', sessionId, repositoryId, autoRunCommand, isActive = true }: TerminalProps) {
   const terminalRef = useRef<HTMLDivElement>(null);
   const xtermRef = useRef<XTerm | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
@@ -60,8 +61,8 @@ export default function Terminal({ className = '', sessionId, repositoryId, auto
     xtermRef.current = xterm;
     fitAddonRef.current = fitAddon;
 
-    // Request a new terminal session from main process
-    window.electron?.ipcRenderer.sendMessage('terminal-create', sessionId, repositoryId);
+    // Attach to terminal session (creates if doesn't exist, or reattaches if it does)
+    window.electron?.ipcRenderer.sendMessage('terminal-attach', sessionId, repositoryId);
 
     // Handle data from terminal - filter by sessionId
     const unsubscribeData = window.electron?.ipcRenderer.on(
@@ -137,7 +138,7 @@ export default function Terminal({ className = '', sessionId, repositoryId, auto
       resizeObserver.observe(terminalRef.current);
     }
 
-    // Cleanup
+    // Cleanup - detach from terminal but keep process running
     return () => {
       window.removeEventListener('resize', handleResize);
       if (resizeTimeout !== null) {
@@ -146,10 +147,26 @@ export default function Terminal({ className = '', sessionId, repositoryId, auto
       resizeObserver.disconnect();
       if (unsubscribeData) unsubscribeData();
       if (unsubscribeExit) unsubscribeExit();
-      window.electron?.ipcRenderer.sendMessage('terminal-destroy', sessionId);
+      // Detach UI from terminal (process keeps running in background)
+      window.electron?.ipcRenderer.sendMessage('terminal-detach', sessionId);
       xterm.dispose();
     };
   }, [sessionId, repositoryId]);
+
+  // Handle terminal visibility changes
+  useEffect(() => {
+    if (isActive && xtermRef.current && fitAddonRef.current) {
+      // Use requestAnimationFrame to ensure browser has painted
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          // Refit terminal dimensions
+          fitAddonRef.current?.fit();
+          // Scroll to bottom to show latest output
+          xtermRef.current?.scrollToBottom();
+        });
+      });
+    }
+  }, [isActive]);
 
   return (
     <div className={`w-full h-full p-2 bg-black/10 ${className}`}>
