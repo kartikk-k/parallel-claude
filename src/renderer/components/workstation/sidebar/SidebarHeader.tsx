@@ -1,9 +1,4 @@
-interface Repository {
-  id: string;
-  name: string;
-  sourcePath: string;
-  defaultBranch?: string;
-}
+import { Repository } from '../../../types';
 
 interface SidebarHeaderProps {
   repository?: Repository;

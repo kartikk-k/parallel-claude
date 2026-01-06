@@ -1,15 +1,4 @@
-interface Repository {
-  id: string;
-  name: string;
-  slug: string;
-  sourcePath: string;
-  createdAt: string;
-  updatedAt: string;
-  lastAccessedAt: string;
-  sessionIds: string[];
-  defaultBranch: string;
-  gitRemote?: string;
-}
+import { Repository } from '../../types';
 
 interface RepositoryCardProps {
   repository: Repository;

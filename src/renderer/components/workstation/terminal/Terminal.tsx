@@ -102,9 +102,30 @@ export default function Terminal({ className = '', sessionId, repositoryId, auto
 
     window.addEventListener('resize', handleResize);
 
+    // Add ResizeObserver to handle container size changes (e.g., sidebar toggle)
+    let resizeTimeout: number | null = null;
+    const resizeObserver = new ResizeObserver(() => {
+      // Use requestAnimationFrame to debounce and prevent loop
+      if (resizeTimeout !== null) {
+        cancelAnimationFrame(resizeTimeout);
+      }
+      resizeTimeout = requestAnimationFrame(() => {
+        handleResize();
+        resizeTimeout = null;
+      });
+    });
+
+    if (terminalRef.current) {
+      resizeObserver.observe(terminalRef.current);
+    }
+
     // Cleanup
     return () => {
       window.removeEventListener('resize', handleResize);
+      if (resizeTimeout !== null) {
+        cancelAnimationFrame(resizeTimeout);
+      }
+      resizeObserver.disconnect();
       if (unsubscribeData) unsubscribeData();
       if (unsubscribeExit) unsubscribeExit();
       window.electron?.ipcRenderer.sendMessage('terminal-destroy', sessionId);

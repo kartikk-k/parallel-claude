@@ -112,7 +112,8 @@
     "react-dom": "^19.0.0",
     "react-grab": "^0.0.94",
     "react-router-dom": "^7.3.0",
-    "uuid": "^13.0.0"
+    "uuid": "^13.0.0",
+    "zustand": "^5.0.9"
   },
   "devDependencies": {
     "@electron/rebuild": "^3.7.1",

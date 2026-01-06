@@ -1,0 +1,4 @@
+export const TRANSITIONS = {
+  SIDEBAR_DURATION: 20,
+  RESIZE_DEBOUNCE: 100,
+} as const;

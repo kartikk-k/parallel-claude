@@ -1,22 +1,11 @@
 import SidebarHeader from './SidebarHeader';
 import SidebarNavigation from './SidebarNavigation';
 import SessionsList from './SessionsList';
-
-interface TerminalSession {
-  id: string;
-  title: string;
-}
-
-interface Repository {
-  id: string;
-  name: string;
-  sourcePath: string;
-  defaultBranch?: string;
-}
+import { Repository, SessionMetadata } from '../../../types';
 
 interface SidebarProps {
   repository?: Repository;
-  sessions: TerminalSession[];
+  sessions: SessionMetadata[];
   activeSessionId: string | null;
   onSessionSelect: (id: string) => void;
   onSessionClose: (id: string) => void;

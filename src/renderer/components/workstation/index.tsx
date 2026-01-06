@@ -1,34 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import Sidebar from '../components/sidebar';
-import Terminal from '../components/Terminal';
-import GitSidebar from '../components/GitSidebar';
+import Sidebar from './sidebar';
+import Terminal from './terminal/Terminal';
+import Topbar from './Topbar';
+import GitSidebar from './git-sidebar';
+import KeyboardHandler from './KeyboardHandler';
+import { useWorkstationStore } from '../../stores';
+import { Repository, SessionMetadata } from '../../types';
 
-interface Repository {
-  id: string;
-  name: string;
-  slug: string;
-  sourcePath: string;
-  defaultBranch: string;
-  sessionIds: string[];
-}
-
-interface SessionMetadata {
-  id: string;
-  repositoryId: string;
-  title: string;
-  branchName: string;
-  baseBranch: string;
-  createdAt: string;
-  workingDirectory: string;
-  autoRunCommand?: string;
-  isRunning: boolean;
-  status: string;
-}
-
-export default function RepositoryView() {
+export default function Workstation() {
   const { repositoryId } = useParams<{ repositoryId: string }>();
   const navigate = useNavigate();
+  const { isGitSidebarVisible } = useWorkstationStore();
 
   const [repository, setRepository] = useState<Repository | null>(null);
   const [sessions, setSessions] = useState<SessionMetadata[]>([]);
@@ -171,6 +154,8 @@ export default function RepositoryView() {
   }
 
   return (
+    <>
+    <KeyboardHandler />
     <div className="flex h-screen text-white">
       {/* Left Sidebar */}
       <Sidebar
@@ -186,11 +171,14 @@ export default function RepositoryView() {
 
       {/* Center: Terminal */}
       <div className="flex-1 flex flex-col">
+        {/* top bar */}
+        <Topbar />
+        <div className='bg-black/40 flex-1'>
         {activeSessionId ? (
           <Terminal
-            key={activeSessionId}
-            sessionId={activeSessionId}
-            repositoryId={repositoryId!}
+          key={activeSessionId}
+          sessionId={activeSessionId}
+          repositoryId={repositoryId!}
           />
         ) : (
           <div className="flex items-center justify-center h-full text-white/50">
@@ -199,21 +187,23 @@ export default function RepositoryView() {
               <button
                 onClick={() => handleCreateSession()}
                 className="px-6 py-3 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
-              >
+                >
                 Create First Session
               </button>
             </div>
           </div>
         )}
+        </div>
       </div>
 
       {/* Right Sidebar: Git Changes */}
-      {activeSessionId && (
+      {activeSessionId && isGitSidebarVisible && (
         <GitSidebar
           repositoryId={repositoryId!}
           sessionId={activeSessionId}
         />
       )}
     </div>
+    </>
   );
 }

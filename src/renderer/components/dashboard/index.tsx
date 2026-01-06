@@ -7,20 +7,9 @@ import RepositoryDropZone from './RepositoryDropZone';
 import RepositoryGrid from './RepositoryGrid';
 import EmptyState from './EmptyState';
 import LoadingState from './LoadingState';
-import { formatDate } from '../../utils/formatDate';
-
-interface Repository {
-  id: string;
-  name: string;
-  slug: string;
-  sourcePath: string;
-  createdAt: string;
-  updatedAt: string;
-  lastAccessedAt: string;
-  sessionIds: string[];
-  defaultBranch: string;
-  gitRemote?: string;
-}
+import { Repository } from '../../types';
+import { formatDate } from '../../utils';
+import { getWorkstationRoute } from '../../constants';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -56,7 +45,7 @@ export default function Dashboard() {
       setError(null);
       const repository = await window.electron.ipcRenderer.invoke('repository:select');
       if (repository) {
-        navigate(`/repository/${repository.id}`);
+        navigate(getWorkstationRoute(repository.id));
       }
     } catch (err: any) {
       console.error('Failed to select repository:', err);
@@ -70,7 +59,7 @@ export default function Dashboard() {
       setError(null);
       const repository = await window.electron.ipcRenderer.invoke('repository:select', path);
       if (repository) {
-        navigate(`/repository/${repository.id}`);
+        navigate(getWorkstationRoute(repository.id));
       }
     } catch (err: any) {
       console.error('Failed to add repository:', err);
@@ -82,7 +71,7 @@ export default function Dashboard() {
   const handleOpenRepository = async (repository: Repository) => {
     try {
       await window.electron.ipcRenderer.invoke('repository:updateLastAccessed', repository.id);
-      navigate(`/repository/${repository.id}`);
+      navigate(getWorkstationRoute(repository.id));
     } catch (err) {
       console.error('Failed to open repository:', err);
     }
