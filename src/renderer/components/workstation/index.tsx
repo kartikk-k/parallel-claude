@@ -130,8 +130,9 @@ export default function Workstation() {
     }
   };
 
-  const handleGoHome = () => {
-    navigate('/');
+  const handleGoHome = async () => {
+    // Open Dashboard in new window
+    await window.electron.ipcRenderer.invoke('window:open-new', '/');
   };
 
   if (isLoading) {

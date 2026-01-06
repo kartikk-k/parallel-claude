@@ -12,7 +12,10 @@ export type Channels =
   | 'terminal-destroy'
   | 'terminal-data'
   | 'terminal-exit'
-  | 'terminal-attached';
+  | 'terminal-attached'
+  | 'navigate-to'
+  | 'window:register-repository'
+  | 'window:unregister-repository';
 
 const electronHandler = {
   ipcRenderer: {

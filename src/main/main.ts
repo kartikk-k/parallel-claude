@@ -39,6 +39,11 @@ let mainWindow: BrowserWindow | null = null;
 let previousAppBundleId: string | null = null; // Store the previous focused app bundle ID
 let movementShortcutsRegistered = false; // Track if movement shortcuts are registered
 
+// Multi-window management
+const windows = new Map<number, BrowserWindow>(); // windowId -> BrowserWindow
+const repositoryWindows = new Map<string, number>(); // repositoryId -> windowId
+let dashboardWindowId: number | null = null; // Track the dashboard window
+
 // Map of terminal sessions by sessionId
 const ptyProcesses = new Map<string, pty.IPty>();
 
@@ -94,9 +99,12 @@ ipcMain.on('terminal-attach', async (event, sessionId: string, repositoryId: str
   if (ptyProcesses.has(sessionId)) {
     console.log(`PTY session ${sessionId} already exists, reattaching...`);
     // Process continues running, just notify UI it's attached
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send('terminal-attached', sessionId);
-    }
+    // Broadcast to all windows
+    windows.forEach((window) => {
+      if (window && !window.isDestroyed()) {
+        window.webContents.send('terminal-attached', sessionId);
+      }
+    });
     return;
   }
 
@@ -121,16 +129,22 @@ ipcMain.on('terminal-attach', async (event, sessionId: string, repositoryId: str
     });
 
     ptyProcess.onData((data) => {
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('terminal-data', sessionId, data);
-      }
+      // Broadcast to all windows
+      windows.forEach((window) => {
+        if (window && !window.isDestroyed()) {
+          window.webContents.send('terminal-data', sessionId, data);
+        }
+      });
     });
 
     ptyProcess.onExit(({ exitCode }) => {
       console.log(`PTY session ${sessionId} exited with code:`, exitCode);
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('terminal-exit', sessionId, exitCode);
-      }
+      // Broadcast to all windows
+      windows.forEach((window) => {
+        if (window && !window.isDestroyed()) {
+          window.webContents.send('terminal-exit', sessionId, exitCode);
+        }
+      });
       ptyProcesses.delete(sessionId);
     });
 
@@ -140,39 +154,47 @@ ipcMain.on('terminal-attach', async (event, sessionId: string, repositoryId: str
     // Auto-run command if specified
     if (session.autoRunCommand) {
       setTimeout(async () => {
-        let command = session.autoRunCommand;
+        try {
+          let command = session.autoRunCommand;
 
-        // If this is a claude command, add session management flags
-        // @ts-ignore
-        if (session.autoRunCommand.includes('claude')) {
-          if (session.claudeSessionStarted) {
-            // Resume existing session using our session UUID
-            command = `${session.autoRunCommand} -r "${session.id}"`;
-            console.log(`Resuming Claude session: ${session.id}`);
-          } else {
-            // Start new session with our session UUID
-            command = `${session.autoRunCommand} --session-id "${session.id}"`;
-            console.log(`Starting Claude with session ID: ${session.id}`);
+          // If this is a claude command, add session management flags
+          // @ts-ignore
+          if (session.autoRunCommand.includes('claude')) {
+            if (session.claudeSessionStarted) {
+              // Resume existing session using our session UUID
+              command = `${session.autoRunCommand} -r "${session.id}"`;
+              console.log(`Resuming Claude session: ${session.id}`);
+            } else {
+              // Start new session with our session UUID
+              command = `${session.autoRunCommand} --session-id "${session.id}"`;
+              console.log(`Starting Claude with session ID: ${session.id}`);
 
-            // Mark session as started
-            try {
-              await sessionService.updateSession(repositoryId, sessionId, {
-                claudeSessionStarted: true,
-              });
-            } catch (err) {
-              console.error('Failed to update claudeSessionStarted flag:', err);
+              // Mark session as started
+              try {
+                await sessionService.updateSession(repositoryId, sessionId, {
+                  claudeSessionStarted: true,
+                });
+              } catch (err) {
+                console.error('Failed to update claudeSessionStarted flag:', err);
+              }
             }
           }
-        }
 
-        ptyProcess.write(command + '\r');
+          ptyProcess.write(command + '\r');
+          console.log(`Successfully sent command to PTY: ${sessionId}`);
+        } catch (err) {
+          console.error(`Error in auto-run command for session ${sessionId}:`, err);
+        }
       }, 500);
     }
   } catch (error) {
     console.error(`Failed to create PTY session ${sessionId}:`, error);
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send('terminal-data', sessionId, `Error creating terminal: ${error}\r\n`);
-    }
+    // Broadcast error to all windows
+    windows.forEach((window) => {
+      if (window && !window.isDestroyed()) {
+        window.webContents.send('terminal-data', sessionId, `Error creating terminal: ${error}\r\n`);
+      }
+    });
   }
 });
 
@@ -209,6 +231,68 @@ ipcMain.on('terminal-destroy', (event, sessionId: string) => {
   }
 });
 
+// Window management IPC handlers
+ipcMain.handle('window:open-new', async (event, initialRoute?: string) => {
+  // Check if opening dashboard (route is '/' or undefined)
+  const isDashboard = !initialRoute || initialRoute === '/';
+
+  if (isDashboard && dashboardWindowId !== null) {
+    // Check if dashboard window still exists
+    const existingWindow = windows.get(dashboardWindowId);
+    if (existingWindow && !existingWindow.isDestroyed()) {
+      // Focus existing dashboard window
+      existingWindow.focus();
+      return { windowId: dashboardWindowId, wasExisting: true };
+    } else {
+      // Window was closed, clear tracking
+      dashboardWindowId = null;
+    }
+  }
+
+  const newWindow = await createWindow(initialRoute);
+
+  // Track if this is a dashboard window
+  if (isDashboard) {
+    dashboardWindowId = newWindow.id;
+  }
+
+  return { windowId: newWindow.id, wasExisting: false };
+});
+
+ipcMain.handle('window:open-repository', async (event, repositoryId: string) => {
+  // Check if repository is already open in another window
+  const existingWindowId = repositoryWindows.get(repositoryId);
+  if (existingWindowId) {
+    const existingWindow = windows.get(existingWindowId);
+    if (existingWindow && !existingWindow.isDestroyed()) {
+      // Focus existing window
+      existingWindow.focus();
+      return { windowId: existingWindowId, wasExisting: true };
+    } else {
+      // Window was closed, remove from tracking
+      repositoryWindows.delete(repositoryId);
+    }
+  }
+
+  // Open new window for this repository
+  const route = `/repository/${repositoryId}`;
+  const newWindow = await createWindow(route);
+  repositoryWindows.set(repositoryId, newWindow.id);
+  return { windowId: newWindow.id, wasExisting: false };
+});
+
+ipcMain.on('window:register-repository', (event, repositoryId: string) => {
+  // Register which repository this window is showing
+  const window = BrowserWindow.fromWebContents(event.sender);
+  if (window) {
+    repositoryWindows.set(repositoryId, window.id);
+  }
+});
+
+ipcMain.on('window:unregister-repository', (event, repositoryId: string) => {
+  repositoryWindows.delete(repositoryId);
+});
+
 if (process.env.NODE_ENV === 'production') {
   const sourceMapSupport = require('source-map-support');
   sourceMapSupport.install();
@@ -234,7 +318,7 @@ const installExtensions = async () => {
     .catch(console.log);
 };
 
-const createWindow = async () => {
+const createWindow = async (initialRoute?: string) => {
   // if (isDebug) {
   //   await installExtensions();
   // }
@@ -250,14 +334,14 @@ const createWindow = async () => {
   // Get screen dimensions
   const primaryDisplay = screen.getPrimaryDisplay();
   const { width: screenWidth, height: screenHeight } = primaryDisplay.workAreaSize;
-  
-  // Calculate window dimensions and position
-  const windowWidth =   1000;
-  const windowHeight = screenHeight - 100; // Full height minus 20px padding on top and bottom
-  const windowX = screenWidth - windowWidth - 20; // Right side with 20px padding
-  const windowY = 50; // 20px padding from top
 
-  mainWindow = new BrowserWindow({
+  // Calculate window dimensions and position
+  const windowWidth = 1000;
+  const windowHeight = screenHeight - 100;
+  const windowX = screenWidth - windowWidth - 20;
+  const windowY = 50;
+
+  const newWindow = new BrowserWindow({
     show: false,
     width: windowWidth,
     height: windowHeight,
@@ -290,48 +374,90 @@ const createWindow = async () => {
     // app.dock.hide();
   }
 
-  mainWindow.loadURL(resolveHtmlPath('index.html'));
+  newWindow.loadURL(resolveHtmlPath('index.html'));
 
-  mainWindow.on('ready-to-show', () => {
-    if (!mainWindow) {
-      throw new Error('"mainWindow" is not defined');
-    }
-    if (process.env.START_MINIMIZED) {
-      mainWindow.minimize();
-    } else {
-      mainWindow.show();
+  newWindow.on('ready-to-show', () => {
+    try {
+      if (!newWindow) {
+        throw new Error('"newWindow" is not defined');
+      }
+      if (process.env.START_MINIMIZED) {
+        newWindow.minimize();
+      } else {
+        newWindow.show();
+      }
+
+      // Navigate to initial route if provided
+      if (initialRoute && newWindow && !newWindow.isDestroyed()) {
+        newWindow.webContents.send('navigate-to', initialRoute);
+      }
+    } catch (err) {
+      console.error('Error in ready-to-show handler:', err);
     }
   });
 
-  mainWindow.on('closed', () => {
-    mainWindow = null;
+  const windowId = newWindow.id;
+
+  newWindow.on('closed', () => {
+    // Remove from tracking
+    windows.delete(windowId);
+
+    // Remove repository mapping if this window had one
+    for (const [repoId, winId] of repositoryWindows.entries()) {
+      if (winId === windowId) {
+        repositoryWindows.delete(repoId);
+        break;
+      }
+    }
+
+    // Clear dashboard window tracking if this was the dashboard
+    if (dashboardWindowId === windowId) {
+      dashboardWindowId = null;
+    }
+
+    // Update mainWindow reference
+    if (mainWindow?.id === windowId) {
+      mainWindow = null;
+    }
   });
 
   // Handle window focus events
-  mainWindow.on('focus', () => {
-    mainWindow?.webContents.send('window-focus', true);
+  newWindow.on('focus', () => {
+    try {
+      if (newWindow && !newWindow.isDestroyed()) {
+        newWindow.webContents.send('window-focus', true);
+      }
+    } catch (err) {
+      console.error('Error in focus handler:', err);
+    }
   });
 
-  mainWindow.on('blur', () => {
-    mainWindow?.webContents.send('window-focus', false);
+  newWindow.on('blur', () => {
+    try {
+      if (newWindow && !newWindow.isDestroyed()) {
+        newWindow.webContents.send('window-focus', false);
+      }
+    } catch (err) {
+      console.error('Error in blur handler:', err);
+    }
   });
 
   // const menuBuilder = new MenuBuilder(mainWindow);
   // menuBuilder.buildMenu();
 
   // Open urls in the user's browser
-  mainWindow.webContents.setWindowOpenHandler((edata) => {
+  newWindow.webContents.setWindowOpenHandler((edata) => {
     shell.openExternal(edata.url);
     return { action: 'deny' };
   });
 
   // Disable developer tools
-  mainWindow.webContents.on('devtools-opened', () => {
-    mainWindow?.webContents.closeDevTools();
+  newWindow.webContents.on('devtools-opened', () => {
+    newWindow?.webContents.closeDevTools();
   });
 
   // Prevent opening developer tools via keyboard shortcuts
-  mainWindow.webContents.on('before-input-event', (event, input) => {
+  newWindow.webContents.on('before-input-event', (event, input) => {
     // if (input.control && input.shift && input.key.toLowerCase() === 'i') {
     //   event.preventDefault();
     // }
@@ -433,53 +559,62 @@ const createWindow = async () => {
     movementShortcutsRegistered = false;
   };
 
-  // Register global shortcut for toggling window visibility
-  globalShortcut.register('CommandOrControl+\\', async () => {
-    if (mainWindow) {
-      if (mainWindow.isVisible()) {
-        // Store the current focused app before hiding
-        previousAppBundleId = await getActiveAppBundleId();
-        mainWindow.hide();
-        // Unregister movement shortcuts when window is hidden
-        unregisterMovementShortcuts();
-        // Focus back to the previous app
-        if (
-          previousAppBundleId &&
-          previousAppBundleId !== 'com.electron.desktop-daddy'
-        ) {
-          await activateAppByBundleId(previousAppBundleId);
-        }
-      } else {
-        // Store the current focused app before showing
-        previousAppBundleId = await getActiveAppBundleId();
-        mainWindow.show();
-        mainWindow.focus();
-        // Register movement shortcuts when window is shown
-        registerMovementShortcuts();
-      }
-    }
-  });
+  // Register Cmd+N shortcut to open new window (only register once)
+  if (windows.size === 0) {
+    globalShortcut.register('CommandOrControl+N', async () => {
+      await createWindow('/'); // Open new window with Dashboard
+    });
 
-  // Register global shortcut for toggling focus between Electron window and previous app (without hiding)
-  // globalShortcut.register('CommandOrControl+/', async () => {
-  //   if (mainWindow && mainWindow.isVisible()) {
-  //     if (mainWindow.isFocused()) {
-  //       await activateAppByBundleId(previousAppBundleId as string);
-  //     } else {
-  //       previousAppBundleId = await getActiveAppBundleId();
-  //       mainWindow.show();
-  //       mainWindow.focus();
-  //       registerMovementShortcuts();
-  //     }
-  //   }
-  // });
+    // Register global shortcut for toggling window visibility (only register once)
+    globalShortcut.register('CommandOrControl+\\', async () => {
+      if (mainWindow) {
+        if (mainWindow.isVisible()) {
+          // Store the current focused app before hiding
+          previousAppBundleId = await getActiveAppBundleId();
+          mainWindow.hide();
+          // Unregister movement shortcuts when window is hidden
+          unregisterMovementShortcuts();
+          // Focus back to the previous app
+          if (
+            previousAppBundleId &&
+            previousAppBundleId !== 'com.electron.desktop-daddy'
+          ) {
+            await activateAppByBundleId(previousAppBundleId);
+          }
+        } else {
+          // Store the current focused app before showing
+          previousAppBundleId = await getActiveAppBundleId();
+          mainWindow.show();
+          mainWindow.focus();
+          // Register movement shortcuts when window is shown
+          registerMovementShortcuts();
+        }
+      }
+    });
+  }
 
   // Register movement shortcuts initially since window will be visible
   registerMovementShortcuts();
 
+  // Track window
+  windows.set(windowId, newWindow);
+
+  // Track as dashboard window if no route or root route
+  const isDashboard = !initialRoute || initialRoute === '/';
+  if (isDashboard && dashboardWindowId === null) {
+    dashboardWindowId = windowId;
+  }
+
+  // Set as mainWindow if it's the first window
+  if (!mainWindow) {
+    mainWindow = newWindow;
+  }
+
   // Remove this if your app does not use auto updates
   // eslint-disable-next-line
   // new AppUpdater();
+
+  return newWindow;
 };
 
 /**
@@ -492,6 +627,16 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
   }
+});
+
+// Add uncaught exception handler
+process.on('uncaughtException', (error) => {
+  console.error('UNCAUGHT EXCEPTION:', error);
+  console.error('Stack trace:', error.stack);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('UNHANDLED REJECTION at:', promise, 'reason:', reason);
 });
 
 app

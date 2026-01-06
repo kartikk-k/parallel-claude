@@ -45,7 +45,8 @@ export default function Dashboard() {
       setError(null);
       const repository = await window.electron.ipcRenderer.invoke('repository:select');
       if (repository) {
-        navigate(getWorkstationRoute(repository.id));
+        // Open in new window or focus existing
+        await window.electron.ipcRenderer.invoke('window:open-repository', repository.id);
       }
     } catch (err: any) {
       console.error('Failed to select repository:', err);
@@ -59,7 +60,8 @@ export default function Dashboard() {
       setError(null);
       const repository = await window.electron.ipcRenderer.invoke('repository:select', path);
       if (repository) {
-        navigate(getWorkstationRoute(repository.id));
+        // Open in new window or focus existing
+        await window.electron.ipcRenderer.invoke('window:open-repository', repository.id);
       }
     } catch (err: any) {
       console.error('Failed to add repository:', err);
@@ -71,7 +73,8 @@ export default function Dashboard() {
   const handleOpenRepository = async (repository: Repository) => {
     try {
       await window.electron.ipcRenderer.invoke('repository:updateLastAccessed', repository.id);
-      navigate(getWorkstationRoute(repository.id));
+      // Open in new window or focus existing
+      await window.electron.ipcRenderer.invoke('window:open-repository', repository.id);
     } catch (err) {
       console.error('Failed to open repository:', err);
     }
