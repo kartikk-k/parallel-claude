@@ -2,6 +2,8 @@ import { useEffect, useRef } from 'react';
 import { Terminal as XTerm } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import '@xterm/xterm/css/xterm.css';
+import { useSessionManagerStore } from '../../../stores';
+import { parseTerminalStatusDebounced } from '../../../utils';
 
 interface TerminalProps {
   className?: string;
@@ -14,6 +16,9 @@ export default function Terminal({ className = '', sessionId, repositoryId, auto
   const terminalRef = useRef<HTMLDivElement>(null);
   const xtermRef = useRef<XTerm | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
+  const terminalContentRef = useRef<string>('');
+
+  const { updateSessionStatus } = useSessionManagerStore();
 
   useEffect(() => {
     if (!terminalRef.current) return;
@@ -67,6 +72,19 @@ export default function Terminal({ className = '', sessionId, repositoryId, auto
 
         if (receivedSessionId === sessionId) {
           xterm.write(data);
+
+          // Accumulate terminal content
+          terminalContentRef.current += data;
+
+          // Keep only last 10000 characters to avoid memory issues
+          if (terminalContentRef.current.length > 10000) {
+            terminalContentRef.current = terminalContentRef.current.slice(-10000);
+          }
+
+          // Parse terminal content and update session status
+          parseTerminalStatusDebounced(terminalContentRef.current, (status) => {
+            updateSessionStatus(sessionId, status);
+          }, 800);
         }
       }
     );
