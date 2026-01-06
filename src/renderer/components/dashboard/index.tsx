@@ -80,6 +80,18 @@ export default function Dashboard() {
     }
   };
 
+  const handleDeleteRepository = async (repository: Repository) => {
+    try {
+      await window.electron.ipcRenderer.invoke('repository:delete', repository.id);
+      // Reload repositories after deletion
+      await loadRepositories();
+    } catch (err) {
+      console.error('Failed to delete repository:', err);
+      setError('Failed to delete repository');
+      setTimeout(() => setError(null), 5000);
+    }
+  };
+
   const filteredRepositories = repositories.filter(repo => {
     const query = searchQuery.toLowerCase();
     return (
@@ -116,6 +128,7 @@ export default function Dashboard() {
             title="Recent Repositories"
             repositories={recentRepositories}
             onRepositoryClick={handleOpenRepository}
+            onRepositoryDelete={handleDeleteRepository}
             formatDate={formatDate}
           />
         )}
@@ -125,6 +138,7 @@ export default function Dashboard() {
             title={searchQuery ? 'Search Results' : 'All Repositories'}
             repositories={allRepositoriesExcludingRecent}
             onRepositoryClick={handleOpenRepository}
+            onRepositoryDelete={handleDeleteRepository}
             formatDate={formatDate}
             emptyMessage="No projects found"
           />

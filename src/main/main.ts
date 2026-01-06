@@ -16,6 +16,7 @@ import {
   ipcMain,
   globalShortcut,
   screen,
+  Menu,
 } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
@@ -291,6 +292,32 @@ ipcMain.on('window:register-repository', (event, repositoryId: string) => {
 
 ipcMain.on('window:unregister-repository', (event, repositoryId: string) => {
   repositoryWindows.delete(repositoryId);
+});
+
+// Context menu handler
+ipcMain.handle('show-context-menu', async (event, menuItems: Array<{ label: string; action: string }>) => {
+  return new Promise((resolve) => {
+    const minWidth = 30; // Minimum label width in characters
+    const template = menuItems.map((item) => ({
+      label: item.label.padEnd(minWidth),
+      click: () => resolve(item.action),
+    }));
+
+    const menu = Menu.buildFromTemplate(template);
+    const window = BrowserWindow.fromWebContents(event.sender);
+
+    if (window) {
+      menu.popup({
+        window,
+        callback: () => {
+          // If menu is dismissed without selection, resolve with null
+          resolve(null);
+        },
+      });
+    } else {
+      resolve(null);
+    }
+  });
 });
 
 if (process.env.NODE_ENV === 'production') {

@@ -17,6 +17,7 @@ interface RepositoryGridProps {
   title: string;
   repositories: Repository[];
   onRepositoryClick: (repository: Repository) => void;
+  onRepositoryDelete?: (repository: Repository) => void;
   formatDate: (dateString: string) => string;
   emptyMessage?: string;
 }
@@ -25,6 +26,7 @@ export default function RepositoryGrid({
   title,
   repositories,
   onRepositoryClick,
+  onRepositoryDelete,
   formatDate,
   emptyMessage = 'No projects found',
 }: RepositoryGridProps) {
@@ -42,6 +44,7 @@ export default function RepositoryGrid({
               key={repo.id}
               repository={repo}
               onClick={() => onRepositoryClick(repo)}
+              onDelete={onRepositoryDelete}
               formatDate={formatDate}
             />
           ))}

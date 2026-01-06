@@ -3,13 +3,41 @@ import { Repository } from '../../types';
 interface RepositoryCardProps {
   repository: Repository;
   onClick: () => void;
+  onDelete?: (repository: Repository) => void;
   formatDate: (dateString: string) => string;
 }
 
-export default function RepositoryCard({ repository, onClick, formatDate }: RepositoryCardProps) {
+export default function RepositoryCard({ repository, onClick, onDelete, formatDate }: RepositoryCardProps) {
+  const handleContextMenu = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Show native context menu through IPC
+    const menuItems = [
+      { label: 'Open', action: 'open' },
+    ];
+
+    if (onDelete) {
+      menuItems.push({ label: 'Delete', action: 'delete' });
+    }
+
+    try {
+      const result = await window.electron.ipcRenderer.invoke('show-context-menu', menuItems);
+
+      if (result === 'open') {
+        onClick();
+      } else if (result === 'delete' && onDelete) {
+        onDelete(repository);
+      }
+    } catch (err) {
+      console.error('Context menu error:', err);
+    }
+  };
+
   return (
     <button
       onClick={onClick}
+      onContextMenu={handleContextMenu}
       className="p-3 bg-white/5 hover:bg-white/10 backdrop-blur-xl border border-white/10 hover:border-white/20 rounded-xl transition-all text-left group"
     >
       <div className="flex items-start gap-3 mb-4">
