@@ -158,6 +158,8 @@ export default function Workstation() {
     <KeyboardHandler />
     <div className="flex h-screen text-white">
       {/* Left Sidebar */}
+      <div className='p-1.5'>
+        <div className='bg-neutral-800/40 h-full rounded-lg'>
       <Sidebar
         repository={repository}
         sessions={sessions}
@@ -167,13 +169,18 @@ export default function Workstation() {
         onCreateSession={handleCreateSession}
         onRenameSession={handleRenameSession}
         onGoHome={handleGoHome}
-      />
+        />
+        </div>
+        </div>
 
       {/* Center: Terminal */}
-      <div className="flex-1 flex flex-col">
+      <div className='py-1.5 flex-1 w-full'>
+      <div className="flex-1 flex flex-col h-full bg-neutral-800/40 rounded-lg overflow-hidden">
         {/* top bar */}
+        <div className='border-b border-white/20'>
         <Topbar />
-        <div className='bg-black/40 flex-1'>
+        </div>
+        <div className='bg- neutral-900/80 flex-1'>
         {activeSessionId ? (
           <Terminal
           key={activeSessionId}
@@ -195,13 +202,19 @@ export default function Workstation() {
         )}
         </div>
       </div>
+      </div>
+
 
       {/* Right Sidebar: Git Changes */}
       {activeSessionId && isGitSidebarVisible && (
+        <div className='p-1.5 w-80'>
+        <div className='bg-neutral-800/40 rounded-lg h-full'>
         <GitSidebar
           repositoryId={repositoryId!}
           sessionId={activeSessionId}
-        />
+          />
+          </div>
+          </div>
       )}
     </div>
     </>

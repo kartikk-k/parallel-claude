@@ -102,7 +102,7 @@ export default function GitSidebar({ repositoryId, sessionId }: GitSidebarProps)
   const totalChanges = changes.modified.length + changes.added.length + changes.deleted.length;
 
   return (
-    <div className="w-80 flex flex-col bg-black/10 backdrop-blur-xl border-l border-white/10 shrink-0">
+    <div className="flex flex-col h-full">
       {/* Header */}
       <div className="px-4 py-3 border-b border-white/10">
         <h3 className="text-sm font-semibold text-white/90">

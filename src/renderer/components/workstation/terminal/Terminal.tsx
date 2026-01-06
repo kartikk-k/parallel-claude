@@ -20,7 +20,7 @@ export default function Terminal({ className = '', sessionId, repositoryId, auto
     // Initialize xterm
     const xterm = new XTerm({
       cursorBlink: true,
-      fontSize: 14,
+      fontSize: 13,
       fontFamily: 'Menlo, Monaco, "Courier New", monospace',
       theme: {
         background: '#1a1a1a00',
