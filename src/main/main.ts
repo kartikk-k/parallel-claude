@@ -21,8 +21,6 @@ import {
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import * as pty from 'node-pty';
-import * as os from 'os';
-import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
 import { StorageService, GitService, RepositoryService, SessionService } from './services';
 import { registerRepositoryHandlers } from './ipc/repositoryHandlers';
@@ -666,14 +664,31 @@ process.on('unhandledRejection', (reason, promise) => {
   console.error('UNHANDLED REJECTION at:', promise, 'reason:', reason);
 });
 
-app
-  .whenReady()
-  .then(() => {
-    createWindow();
-    app.on('activate', () => {
-      // On macOS it's common to re-create a window in the app when the
-      // dock icon is clicked and there are no other windows open.
-      if (mainWindow === null) createWindow();
-    });
-  })
-  .catch(console.log);
+// Single instance lock - prevent multiple instances from opening
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+  // Another instance is already running, quit this one
+  app.quit();
+} else {
+  // This is the first/only instance
+  app.on('second-instance', (event, commandLine, workingDirectory) => {
+    // Someone tried to run a second instance, we should focus our window
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+    }
+  });
+
+  app
+    .whenReady()
+    .then(() => {
+      createWindow();
+      app.on('activate', () => {
+        // On macOS it's common to re-create a window in the app when the
+        // dock icon is clicked and there are no other windows open.
+        if (mainWindow === null) createWindow();
+      });
+    })
+    .catch(console.log);
+}
