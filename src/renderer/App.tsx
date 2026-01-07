@@ -11,7 +11,8 @@ function AppRoutes() {
 
   useEffect(() => {
     // Listen for navigation requests from main process
-    const unsubscribe = window.electron?.ipcRenderer.on('navigate-to', (route: string) => {
+    const unsubscribe = window.electron?.ipcRenderer.on('navigate-to', (...args: unknown[]) => {
+      const route = args[0] as string;
       navigate(route);
     });
 
@@ -31,6 +32,9 @@ function AppRoutes() {
 export default function App() {
   return (
     <Router>
+      {/* Global invisible draggable bar at the top */}
+      <div className="fixed top-0 left-0 right-0 h-3 draggable-region z-50" />
+
       <AppRoutes />
     </Router>
   );

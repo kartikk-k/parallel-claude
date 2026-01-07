@@ -6,6 +6,21 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Draggable window region */
+.draggable-region {
+  -webkit-app-region: drag;
+  app-region: drag;
+}
+
+/* Make sure interactive elements inside draggable regions are still clickable */
+.draggable-region button,
+.draggable-region input,
+.draggable-region a,
+.draggable-region select {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
 /* Force xterm.js terminal to be transparent */
 .xterm {
   background-color: transparent !important;
