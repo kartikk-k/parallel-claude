@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
 import Sidebar from './sidebar';
 import Terminal from './terminal/Terminal';
 import Topbar from './Topbar';
@@ -7,40 +6,36 @@ import GitSidebar from './git-sidebar';
 import KeyboardHandler from './KeyboardHandler';
 import { useWorkstationStore } from '../../stores';
 import { Repository, SessionMetadata } from '../../types';
+import { useTabStore } from '../../store/tabStore';
 
-export default function Workstation() {
-  const { repositoryId } = useParams<{ repositoryId: string }>();
-  const navigate = useNavigate();
+interface WorkstationProps {
+  repository: Repository;
+  isActive?: boolean;
+}
+
+export default function Workstation({ repository, isActive = true }: WorkstationProps) {
   const { isGitSidebarVisible } = useWorkstationStore();
+  const { setActiveTab } = useTabStore();
 
-  const [repository, setRepository] = useState<Repository | null>(null);
+  const repositoryId = repository.id;
+  const gitSidebarVisible = isGitSidebarVisible(repositoryId);
+
   const [sessions, setSessions] = useState<SessionMetadata[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  useEffect(() => {
-    if (repositoryId) {
-      loadRepository();
-    }
-  }, [repositoryId]);
-
-  const loadRepository = async () => {
+  const loadSessions = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
 
-      const [repo, sessionsList] = await Promise.all([
-        window.electron.ipcRenderer.invoke('repository:get', repositoryId),
-        window.electron.ipcRenderer.invoke('session:getByRepository', repositoryId),
-      ]);
+      const sessionsList = await window.electron.ipcRenderer.invoke(
+        'session:getByRepository',
+        repositoryId
+      );
 
-      if (!repo) {
-        setError('Repository not found');
-        return;
-      }
-
-      setRepository(repo);
       setSessions(sessionsList);
 
       // Set active session to first one if exists
@@ -48,14 +43,22 @@ export default function Workstation() {
         setActiveSessionId(sessionsList[0].id);
       }
     } catch (err) {
-      console.error('Failed to load repository:', err);
-      setError('Failed to load repository');
+      console.error('Failed to load sessions:', err);
+      setError('Failed to load sessions');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [repositoryId, activeSessionId]);
 
-  const handleCreateSession = async (title?: string) => {
+  useEffect(() => {
+    // Only load sessions once on mount
+    if (!isInitialized) {
+      loadSessions();
+      setIsInitialized(true);
+    }
+  }, [repositoryId, isInitialized, loadSessions]);
+
+  const handleCreateSession = useCallback(async (title?: string) => {
     try {
       setError(null);
       const newSession = await window.electron.ipcRenderer.invoke(
@@ -73,9 +76,9 @@ export default function Workstation() {
       console.error('Failed to create session:', err);
       setError(err.message || 'Failed to create session');
     }
-  };
+  }, [repositoryId, sessions]);
 
-  const handleSessionSelect = async (sessionId: string) => {
+  const handleSessionSelect = useCallback(async (sessionId: string) => {
     setActiveSessionId(sessionId);
     try {
       await window.electron.ipcRenderer.invoke(
@@ -86,9 +89,9 @@ export default function Workstation() {
     } catch (err) {
       console.error('Failed to update last accessed:', err);
     }
-  };
+  }, [repositoryId]);
 
-  const handleSessionClose = async (sessionId: string) => {
+  const handleSessionClose = useCallback(async (sessionId: string) => {
     if (sessions.length === 1) {
       return; // Don't close last session
     }
@@ -113,9 +116,9 @@ export default function Workstation() {
       console.error('Failed to delete session:', err);
       setError('Failed to delete session');
     }
-  };
+  }, [sessions, repositoryId, activeSessionId]);
 
-  const handleRenameSession = async (sessionId: string, newTitle: string) => {
+  const handleRenameSession = useCallback(async (sessionId: string, newTitle: string) => {
     try {
       const updated = await window.electron.ipcRenderer.invoke(
         'session:update',
@@ -128,12 +131,16 @@ export default function Workstation() {
     } catch (err) {
       console.error('Failed to rename session:', err);
     }
-  };
+  }, [repositoryId, sessions]);
 
-  const handleGoHome = async () => {
-    // Open Dashboard in new window
-    await window.electron.ipcRenderer.invoke('window:open-new', '/');
-  };
+  const handleGoHome = useCallback(async () => {
+    // Switch to dashboard tab
+    const tabs = useTabStore.getState().tabs;
+    const dashboardTab = tabs.find((t) => t.type === 'dashboard');
+    if (dashboardTab) {
+      setActiveTab(dashboardTab.id);
+    }
+  }, [setActiveTab]);
 
   if (isLoading) {
     return (
@@ -159,8 +166,8 @@ export default function Workstation() {
 
   return (
     <>
-    <KeyboardHandler />
-    <div className="flex h-screen text-white">
+    <KeyboardHandler repositoryId={repositoryId} />
+    <div className="flex h-full text-white">
       {/* Left Sidebar */}
       <div className='p-1.5'>
         <div className='bg-neutral-800/40 h-full rounded-lg'>
@@ -182,7 +189,7 @@ export default function Workstation() {
       <div className="flex-1 flex flex-col h-full bg-neutral-800/40 rounded-lg overflow-hidden">
         {/* top bar */}
         <div className='border-b border-white/20'>
-        <Topbar />
+        <Topbar repositoryId={repositoryId} />
         </div>
         <div className='bg- neutral-900/80 flex-1 relative'>
         {sessions.length > 0 ? (
@@ -222,11 +229,11 @@ export default function Workstation() {
 
 
       {/* Right Sidebar: Git Changes */}
-      {activeSessionId && isGitSidebarVisible && (
-        <div className='p-1.5 w-80'>
-        <div className='bg-neutral-800/40 rounded-lg h-full'>
+      {activeSessionId && gitSidebarVisible && (
+        <div className='p-1.5 w-80 flex flex-col overflow-hidden'>
+        <div className='bg-neutral-800/40 rounded-lg flex-1 overflow-hidden'>
         <GitSidebar
-          repositoryId={repositoryId!}
+          repositoryId={repositoryId}
           sessionId={activeSessionId}
           />
           </div>

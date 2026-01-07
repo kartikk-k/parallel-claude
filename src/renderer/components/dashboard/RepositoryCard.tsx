@@ -1,3 +1,4 @@
+import { memo, useCallback } from 'react';
 import { Repository } from '../../types';
 
 interface RepositoryCardProps {
@@ -7,8 +8,8 @@ interface RepositoryCardProps {
   formatDate: (dateString: string) => string;
 }
 
-export default function RepositoryCard({ repository, onClick, onDelete, formatDate }: RepositoryCardProps) {
-  const handleContextMenu = async (e: React.MouseEvent) => {
+const RepositoryCard = memo(({ repository, onClick, onDelete, formatDate }: RepositoryCardProps) => {
+  const handleContextMenu = useCallback(async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
@@ -32,7 +33,7 @@ export default function RepositoryCard({ repository, onClick, onDelete, formatDa
     } catch (err) {
       console.error('Context menu error:', err);
     }
-  };
+  }, [onClick, onDelete, repository]);
 
   return (
     <button
@@ -87,4 +88,8 @@ export default function RepositoryCard({ repository, onClick, onDelete, formatDa
       </div>
     </button>
   );
-}
+});
+
+RepositoryCard.displayName = 'RepositoryCard';
+
+export default RepositoryCard;

@@ -295,9 +295,8 @@ ipcMain.on('window:unregister-repository', (event, repositoryId: string) => {
 // Context menu handler
 ipcMain.handle('show-context-menu', async (event, menuItems: Array<{ label: string; action: string }>) => {
   return new Promise((resolve) => {
-    const minWidth = 30; // Minimum label width in characters
     const template = menuItems.map((item) => ({
-      label: item.label.padEnd(minWidth),
+      label: item.label,
       click: () => resolve(item.action),
     }));
 

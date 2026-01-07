@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import RepositoryCard from './RepositoryCard';
 
 interface Repository {
@@ -22,34 +23,36 @@ interface RepositoryGridProps {
   emptyMessage?: string;
 }
 
-export default function RepositoryGrid({
+const RepositoryGrid = memo(({
   title,
   repositories,
   onRepositoryClick,
   onRepositoryDelete,
   formatDate,
   emptyMessage = 'No projects found',
-}: RepositoryGridProps) {
-  return (
-    <div className="mb-12">
-      <h2 className="text-xl font-medium mb-4 text-white/80">{title}</h2>
-      {repositories.length === 0 ? (
-        <div className="text-center py-12 text-white/50">
-          {emptyMessage}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {repositories.map((repo) => (
-            <RepositoryCard
-              key={repo.id}
-              repository={repo}
-              onClick={() => onRepositoryClick(repo)}
-              onDelete={onRepositoryDelete}
-              formatDate={formatDate}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
+}: RepositoryGridProps) => (
+  <div className="mb-12">
+    <h2 className="text-xl font-medium mb-4 text-white/80">{title}</h2>
+    {repositories.length === 0 ? (
+      <div className="text-center py-12 text-white/50">
+        {emptyMessage}
+      </div>
+    ) : (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {repositories.map((repo) => (
+          <RepositoryCard
+            key={repo.id}
+            repository={repo}
+            onClick={() => onRepositoryClick(repo)}
+            onDelete={onRepositoryDelete}
+            formatDate={formatDate}
+          />
+        ))}
+      </div>
+    )}
+  </div>
+));
+
+RepositoryGrid.displayName = 'RepositoryGrid';
+
+export default RepositoryGrid;

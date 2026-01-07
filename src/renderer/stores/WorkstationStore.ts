@@ -1,13 +1,31 @@
 import { create } from 'zustand';
 
 interface WorkstationState {
-  isGitSidebarVisible: boolean;
-  toggleGitSidebar: () => void;
-  setGitSidebarVisible: (visible: boolean) => void;
+  gitSidebarVisibility: Record<string, boolean>; // Track per repository ID
+  isGitSidebarVisible: (repositoryId: string) => boolean;
+  toggleGitSidebar: (repositoryId: string) => void;
+  setGitSidebarVisible: (repositoryId: string, visible: boolean) => void;
 }
 
-export const useWorkstationStore = create<WorkstationState>((set) => ({
-  isGitSidebarVisible: true,
-  toggleGitSidebar: () => set((state) => ({ isGitSidebarVisible: !state.isGitSidebarVisible })),
-  setGitSidebarVisible: (visible: boolean) => set({ isGitSidebarVisible: visible }),
+export const useWorkstationStore = create<WorkstationState>((set, get) => ({
+  gitSidebarVisibility: {},
+
+  isGitSidebarVisible: (repositoryId: string) => {
+    const visibility = get().gitSidebarVisibility[repositoryId];
+    return visibility !== undefined ? visibility : true; // Default to visible
+  },
+
+  toggleGitSidebar: (repositoryId: string) => set((state) => ({
+    gitSidebarVisibility: {
+      ...state.gitSidebarVisibility,
+      [repositoryId]: !state.isGitSidebarVisible(repositoryId),
+    },
+  })),
+
+  setGitSidebarVisible: (repositoryId: string, visible: boolean) => set((state) => ({
+    gitSidebarVisibility: {
+      ...state.gitSidebarVisibility,
+      [repositoryId]: visible,
+    },
+  })),
 }));

@@ -21,6 +21,16 @@
   app-region: no-drag;
 }
 
+/* Hide scrollbar but allow scrolling */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* Force xterm.js terminal to be transparent */
 .xterm {
   background-color: transparent !important;

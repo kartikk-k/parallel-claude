@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
 import DashboardHeader from './DashboardHeader';
 import SearchBar from './SearchBar';
 import ErrorAlert from './ErrorAlert';
@@ -9,21 +8,17 @@ import EmptyState from './EmptyState';
 import LoadingState from './LoadingState';
 import { Repository } from '../../types';
 import { formatDate } from '../../utils';
-import { getWorkstationRoute } from '../../constants';
+import { useTabStore } from '../../store/tabStore';
 
 export default function Dashboard() {
-  const navigate = useNavigate();
+  const { addTab, tabs } = useTabStore();
   const [repositories, setRepositories] = useState<Repository[]>([]);
   const [recentRepositories, setRecentRepositories] = useState<Repository[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadRepositories();
-  }, []);
-
-  const loadRepositories = async () => {
+  const loadRepositories = useCallback(async () => {
     try {
       setIsLoading(true);
       const [all, recent] = await Promise.all([
@@ -38,49 +33,70 @@ export default function Dashboard() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const handleSelectRepository = async () => {
+  useEffect(() => {
+    loadRepositories();
+  }, [loadRepositories]);
+
+  const openRepositoryInTab = useCallback((repository: Repository) => {
+    // Check if tab already exists
+    const existingTab = tabs.find(
+      (t) => t.type === 'repository' && t.repository?.id === repository.id
+    );
+
+    if (existingTab) {
+      // Switch to existing tab
+      useTabStore.getState().setActiveTab(existingTab.id);
+    } else {
+      // Create new tab
+      addTab({
+        type: 'repository',
+        title: repository.name,
+        repository,
+        route: `/repository/${repository.id}`,
+      });
+    }
+  }, [tabs, addTab]);
+
+  const handleSelectRepository = useCallback(async () => {
     try {
       setError(null);
       const repository = await window.electron.ipcRenderer.invoke('repository:select');
       if (repository) {
-        // Open in new window or focus existing
-        await window.electron.ipcRenderer.invoke('window:open-repository', repository.id);
+        openRepositoryInTab(repository);
       }
     } catch (err: any) {
       console.error('Failed to select repository:', err);
       setError(err.message || 'This folder is not a Git repository');
       setTimeout(() => setError(null), 5000);
     }
-  };
+  }, [openRepositoryInTab]);
 
-  const handleDropRepository = async (path: string) => {
+  const handleDropRepository = useCallback(async (path: string) => {
     try {
       setError(null);
       const repository = await window.electron.ipcRenderer.invoke('repository:select', path);
       if (repository) {
-        // Open in new window or focus existing
-        await window.electron.ipcRenderer.invoke('window:open-repository', repository.id);
+        openRepositoryInTab(repository);
       }
     } catch (err: any) {
       console.error('Failed to add repository:', err);
       setError(err.message || 'This folder is not a Git repository');
       setTimeout(() => setError(null), 5000);
     }
-  };
+  }, [openRepositoryInTab]);
 
-  const handleOpenRepository = async (repository: Repository) => {
+  const handleOpenRepository = useCallback(async (repository: Repository) => {
     try {
       await window.electron.ipcRenderer.invoke('repository:updateLastAccessed', repository.id);
-      // Open in new window or focus existing
-      await window.electron.ipcRenderer.invoke('window:open-repository', repository.id);
+      openRepositoryInTab(repository);
     } catch (err) {
       console.error('Failed to open repository:', err);
     }
-  };
+  }, [openRepositoryInTab]);
 
-  const handleDeleteRepository = async (repository: Repository) => {
+  const handleDeleteRepository = useCallback(async (repository: Repository) => {
     try {
       await window.electron.ipcRenderer.invoke('repository:delete', repository.id);
       // Reload repositories after deletion
@@ -90,7 +106,7 @@ export default function Dashboard() {
       setError('Failed to delete repository');
       setTimeout(() => setError(null), 5000);
     }
-  };
+  }, [loadRepositories]);
 
   const filteredRepositories = repositories.filter(repo => {
     const query = searchQuery.toLowerCase();
