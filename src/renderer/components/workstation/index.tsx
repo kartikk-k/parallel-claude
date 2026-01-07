@@ -169,7 +169,7 @@ export default function Workstation({ repository, isActive = true }: Workstation
     <KeyboardHandler repositoryId={repositoryId} />
     <div className="flex h-full text-white">
       {/* Left Sidebar */}
-      <div className='p-1.5'>
+      <div className='p-1.5 pr-0'>
         <div className='bg-neutral-800/40 h-full rounded-lg'>
       <Sidebar
         repository={repository}
@@ -185,7 +185,7 @@ export default function Workstation({ repository, isActive = true }: Workstation
         </div>
 
       {/* Center: Terminal */}
-      <div className='py-1.5 flex-1 w-full'>
+      <div className='p-1.5 flex-1 w-full'>
       <div className="flex-1 flex flex-col h-full bg-neutral-800/40 rounded-lg overflow-hidden">
         {/* top bar */}
         <div className='border-b border-white/20'>
@@ -230,7 +230,7 @@ export default function Workstation({ repository, isActive = true }: Workstation
 
       {/* Right Sidebar: Git Changes */}
       {activeSessionId && gitSidebarVisible && (
-        <div className='p-1.5 w-80 flex flex-col overflow-hidden'>
+        <div className='p-1.5 pl-0 w-80 flex flex-col overflow-hidden'>
         <div className='bg-neutral-800/40 rounded-lg flex-1 overflow-hidden'>
         <GitSidebar
           repositoryId={repositoryId}

@@ -31,7 +31,7 @@ const RepositoryGrid = memo(({
   formatDate,
   emptyMessage = 'No projects found',
 }: RepositoryGridProps) => (
-  <div className="mb-12">
+  <div className="">
     <h2 className="text-xl font-medium mb-4 text-white/80">{title}</h2>
     {repositories.length === 0 ? (
       <div className="text-center py-12 text-white/50">

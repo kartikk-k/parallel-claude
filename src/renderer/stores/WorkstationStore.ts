@@ -12,7 +12,7 @@ export const useWorkstationStore = create<WorkstationState>((set, get) => ({
 
   isGitSidebarVisible: (repositoryId: string) => {
     const visibility = get().gitSidebarVisibility[repositoryId];
-    return visibility !== undefined ? visibility : true; // Default to visible
+    return visibility !== undefined ? visibility : false; // Default to visible
   },
 
   toggleGitSidebar: (repositoryId: string) => set((state) => ({
