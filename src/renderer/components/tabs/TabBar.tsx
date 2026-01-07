@@ -7,7 +7,7 @@ const TabBar = memo(() => {
   const activeTabId = useTabStore((state) => state.activeTabId);
 
   return (
-    <div className="flex items-center bg-black/20 backdrop-blur-sm border-b border-white/5 overflow-x-auto scrollbar-hide">
+    <div className="flex items-center overflow-x-auto scrollbar-hide p-1.5 pb-0 gap-1">
       {tabs.map((tab) => (
         <Tab key={tab.id} tab={tab} isActive={tab.id === activeTabId} />
       ))}

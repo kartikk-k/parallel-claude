@@ -126,8 +126,8 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-transparent text-white p-8">
-      <div className="max-w-5xl mx-auto">
+    <div className="h-full text-white p-1.5 flex flex-col overflow-y-auto">
+      <div className="mx-auto bg-neutral-800/40 p-4 rounded-lg flex-1 w-full">
         <DashboardHeader />
 
         <SearchBar value={searchQuery} onChange={setSearchQuery} />
