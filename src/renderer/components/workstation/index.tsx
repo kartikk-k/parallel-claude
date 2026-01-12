@@ -232,7 +232,7 @@ export default function Workstation({ repository, isActive = true }: Workstation
             )}
           </div>
 
-          {/* Preview layer - ALWAYS RENDERED */}
+          {/* Preview layer - ALWAYS RENDERED (ONE PER SESSION) */}
           <div
             className="absolute inset-0"
             style={{
@@ -241,7 +241,14 @@ export default function Workstation({ repository, isActive = true }: Workstation
               pointerEvents: activeView === 'preview' ? 'auto' : 'none'
             }}
           >
-            <BrowserPreview />
+            {sessions.length > 0 && sessions.map((session) => (
+              <BrowserPreview
+                key={session.id}
+                sessionId={session.id}
+                repositoryId={repositoryId}
+                isActive={activeView === 'preview' && session.id === activeSessionId}
+              />
+            ))}
           </div>
         </div>
       </div>

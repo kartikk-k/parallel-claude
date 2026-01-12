@@ -1,18 +1,50 @@
 import { useState, useEffect, useRef } from 'react';
 
 interface BrowserPreviewProps {
+  sessionId: string;
+  repositoryId: string;
+  isActive: boolean;
   className?: string;
-  defaultPort?: number;
 }
 
-export default function BrowserPreview({ className = '', defaultPort = 3000 }: BrowserPreviewProps) {
-  const [url, setUrl] = useState(`http://localhost:${defaultPort}`);
-  const [inputUrl, setInputUrl] = useState(`http://localhost:${defaultPort}`);
-  const [isLoading, setIsLoading] = useState(true);
+export default function BrowserPreview({
+  sessionId,
+  repositoryId,
+  isActive,
+  className = ''
+}: BrowserPreviewProps) {
+  const [url, setUrl] = useState('http://localhost:3000');
+  const [inputUrl, setInputUrl] = useState('http://localhost:3000');
+  const [isLoading, setIsLoading] = useState(false);
   const webviewRef = useRef<any>(null);
+  const isInitializedRef = useRef(false);
 
-  // Setup webview event listeners
+  // Load saved URL for this session
   useEffect(() => {
+    const loadSavedUrl = async () => {
+      try {
+        const sessions = await window.electron.ipcRenderer.invoke(
+          'session:getByRepository',
+          repositoryId
+        );
+        const session = sessions.find((s: any) => s.id === sessionId);
+
+        if (session?.previewUrl) {
+          setUrl(session.previewUrl);
+          setInputUrl(session.previewUrl);
+        }
+      } catch (err) {
+        console.error('Failed to load preview URL:', err);
+      }
+    };
+
+    loadSavedUrl();
+  }, [sessionId, repositoryId]);
+
+  // Setup webview event listeners (only once per session)
+  useEffect(() => {
+    if (isInitializedRef.current) return;
+
     const webview = webviewRef.current;
     if (!webview) return;
 
@@ -30,46 +62,62 @@ export default function BrowserPreview({ className = '', defaultPort = 3000 }: B
     };
 
     const handleDomReady = () => {
-      // Webview is now ready, we can safely check loading state
-      console.log('Webview DOM ready');
+      console.log(`[Preview ${sessionId}] Webview DOM ready`);
     };
 
-    // Wait for dom-ready before setting up other listeners
     const setupListeners = () => {
       webview.addEventListener('did-start-loading', handleLoadStart);
       webview.addEventListener('did-stop-loading', handleLoadStop);
       webview.addEventListener('did-fail-load', handleLoadFail);
+      isInitializedRef.current = true;
     };
 
     // Check if webview is already ready
     if (webview.getWebContentsId) {
       try {
         webview.getWebContentsId();
-        // Already ready, setup listeners immediately
         setupListeners();
       } catch (e) {
-        // Not ready yet, wait for dom-ready
         webview.addEventListener('dom-ready', () => {
           handleDomReady();
           setupListeners();
         });
       }
     } else {
-      // Wait for dom-ready
       webview.addEventListener('dom-ready', () => {
         handleDomReady();
         setupListeners();
       });
     }
 
-    // Cleanup
     return () => {
       webview.removeEventListener('did-start-loading', handleLoadStart);
       webview.removeEventListener('did-stop-loading', handleLoadStop);
       webview.removeEventListener('did-fail-load', handleLoadFail);
       webview.removeEventListener('dom-ready', handleDomReady);
     };
-  }, []);
+  }, [sessionId]);
+
+  // Update webview URL when url changes
+  useEffect(() => {
+    if (webviewRef.current && url) {
+      webviewRef.current.src = url;
+    }
+  }, [url]);
+
+  // Save URL to session when it changes
+  const saveUrlToSession = async (newUrl: string) => {
+    try {
+      await window.electron.ipcRenderer.invoke(
+        'session:update',
+        repositoryId,
+        sessionId,
+        { previewUrl: newUrl }
+      );
+    } catch (err) {
+      console.error('Failed to save preview URL:', err);
+    }
+  };
 
   // Smart URL parser to handle various input formats
   const parseUrl = (input: string): string => {
@@ -77,7 +125,7 @@ export default function BrowserPreview({ className = '', defaultPort = 3000 }: B
 
     // If empty, return default
     if (!trimmed) {
-      return `http://localhost:${defaultPort}`;
+      return 'http://localhost:3000';
     }
 
     // If already has protocol, return as-is
@@ -109,7 +157,7 @@ export default function BrowserPreview({ className = '', defaultPort = 3000 }: B
     }
   };
 
-  const handleUrlSubmit = (e: React.FormEvent) => {
+  const handleUrlSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const parsedUrl = parseUrl(inputUrl);
 
@@ -119,12 +167,16 @@ export default function BrowserPreview({ className = '', defaultPort = 3000 }: B
     } else {
       setIsLoading(true);
       setUrl(parsedUrl);
-      setInputUrl(parsedUrl); // Update input to show the full URL
+      setInputUrl(parsedUrl);
+      await saveUrlToSession(parsedUrl);
     }
   };
 
   return (
-    <div className={`w-full h-full flex flex-col ${className}`}>
+    <div
+      className={`w-full h-full flex flex-col ${className}`}
+      style={{ display: isActive ? 'flex' : 'none' }}
+    >
       {/* URL Bar */}
       <div className="flex items-center gap-2 p-3 bg-black/20 border-b border-white/10">
         <button

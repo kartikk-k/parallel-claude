@@ -9,4 +9,5 @@ export interface SessionMetadata {
   autoRunCommand?: string;
   isRunning: boolean;
   status: string;
+  previewUrl?: string;
 }

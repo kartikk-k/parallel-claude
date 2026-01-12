@@ -46,6 +46,7 @@ export interface SessionMetadata {
   filesChanged: number;
   status: 'active' | 'idle' | 'merged' | 'archived';
   claudeSessionStarted?: boolean; // Track if Claude session has been started
+  previewUrl?: string; // Per-session preview URL
 }
 
 export interface AppConfig {
