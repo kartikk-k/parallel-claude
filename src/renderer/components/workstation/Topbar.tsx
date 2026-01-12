@@ -3,14 +3,41 @@ import { useWorkstationStore } from '../../stores';
 
 interface TopbarProps {
   repositoryId: string;
+  activeView: 'terminal' | 'preview';
+  onViewChange: (view: 'terminal' | 'preview') => void;
 }
 
-function Topbar({ repositoryId }: TopbarProps) {
+function Topbar({ repositoryId, activeView, onViewChange }: TopbarProps) {
   const { isGitSidebarVisible, toggleGitSidebar } = useWorkstationStore();
   const sidebarVisible = isGitSidebarVisible(repositoryId);
 
   return (
-    <div className='h-[42px] flex items-center justify-end px-4'>
+    <div className='h-[42px] flex items-center justify-between px-4'>
+      {/* View Tabs */}
+      <div className="flex items-center gap-1">
+        <button
+          onClick={() => onViewChange('terminal')}
+          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+            activeView === 'terminal'
+              ? 'bg-white/10 text-white'
+              : 'text-white/50 hover:text-white/70 hover:bg-white/5'
+          }`}
+        >
+          Terminal
+        </button>
+        <button
+          onClick={() => onViewChange('preview')}
+          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+            activeView === 'preview'
+              ? 'bg-white/10 text-white'
+              : 'text-white/50 hover:text-white/70 hover:bg-white/5'
+          }`}
+        >
+          Preview
+        </button>
+      </div>
+
+      {/* Git Sidebar Toggle */}
       <button
         onClick={() => toggleGitSidebar(repositoryId)}
         className={`p-2 rounded-lg transition-colors ${

@@ -388,6 +388,7 @@ const createWindow = async (initialRoute?: string) => {
       devTools: false,
       nodeIntegration: false,
       contextIsolation: true,
+      webviewTag: true, // Enable webview for browser preview
     },
   });
 

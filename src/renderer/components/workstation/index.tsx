@@ -4,6 +4,7 @@ import Terminal from './terminal/Terminal';
 import Topbar from './Topbar';
 import GitSidebar from './git-sidebar';
 import KeyboardHandler from './KeyboardHandler';
+import BrowserPreview from './BrowserPreview';
 import { useWorkstationStore } from '../../stores';
 import { Repository, SessionMetadata } from '../../types';
 import { useTabStore } from '../../store/tabStore';
@@ -25,6 +26,7 @@ export default function Workstation({ repository, isActive = true }: Workstation
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [activeView, setActiveView] = useState<'terminal' | 'preview'>('terminal');
 
   const loadSessions = useCallback(async () => {
     try {
@@ -189,39 +191,47 @@ export default function Workstation({ repository, isActive = true }: Workstation
       <div className="flex-1 flex flex-col h-full bg-neutral-800/40 rounded-lg overflow-hidden">
         {/* top bar */}
         <div className='border-b border-white/20'>
-        <Topbar repositoryId={repositoryId} />
+        <Topbar
+          repositoryId={repositoryId}
+          activeView={activeView}
+          onViewChange={setActiveView}
+        />
         </div>
         <div className='bg- neutral-900/80 flex-1 relative'>
-        {sessions.length > 0 ? (
-          // Render all terminals but only show the active one
-          sessions.map((session) => (
-            <div
-              key={session.id}
-              className="absolute inset-0"
-              style={{
-                visibility: session.id === activeSessionId ? 'visible' : 'hidden',
-                zIndex: session.id === activeSessionId ? 1 : 0,
-              }}
-            >
-              <Terminal
-                sessionId={session.id}
-                repositoryId={repositoryId!}
-                isActive={session.id === activeSessionId}
-              />
+        {activeView === 'terminal' ? (
+          sessions.length > 0 ? (
+            // Render all terminals but only show the active one
+            sessions.map((session) => (
+              <div
+                key={session.id}
+                className="absolute inset-0"
+                style={{
+                  visibility: session.id === activeSessionId ? 'visible' : 'hidden',
+                  zIndex: session.id === activeSessionId ? 1 : 0,
+                }}
+              >
+                <Terminal
+                  sessionId={session.id}
+                  repositoryId={repositoryId!}
+                  isActive={session.id === activeSessionId}
+                />
+              </div>
+            ))
+          ) : (
+            <div className="flex items-center justify-center h-full text-white/50">
+              <div className="text-center">
+                <p className="text-xl mb-4">No sessions yet</p>
+                <button
+                  onClick={() => handleCreateSession()}
+                  className="px-6 py-3 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
+                  >
+                  Create First Session
+                </button>
+              </div>
             </div>
-          ))
+          )
         ) : (
-          <div className="flex items-center justify-center h-full text-white/50">
-            <div className="text-center">
-              <p className="text-xl mb-4">No sessions yet</p>
-              <button
-                onClick={() => handleCreateSession()}
-                className="px-6 py-3 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
-                >
-                Create First Session
-              </button>
-            </div>
-          </div>
+          <BrowserPreview />
         )}
         </div>
       </div>

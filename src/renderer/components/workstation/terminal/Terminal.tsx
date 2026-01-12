@@ -55,6 +55,7 @@ export default function Terminal({ className = '', sessionId, repositoryId, auto
     const fitAddon = new FitAddon();
     xterm.loadAddon(fitAddon);
 
+    // Attach terminal to DOM immediately
     xterm.open(terminalRef.current);
     fitAddon.fit();
 
