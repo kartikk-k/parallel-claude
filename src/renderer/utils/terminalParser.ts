@@ -40,50 +40,67 @@ export function parseTerminalStatus(content: string): SessionStatus {
 function detectWaitingForInput(content: string): ParseResult {
   let confidence = 0;
 
-  // Check for common input prompts
-  const inputPatterns = [
-    /\?\s*$/,                                    // Ends with ?
-    /\?.*\n/,                                    // Question mark followed by newline
-    /\(y\/n\)/i,                                 // (y/n) prompts
+  // Check if this is just informational content (suggestions, shortcuts, etc.)
+  const isInformational = [
+    /Try\s+"/i,                                  // "Try" suggestions
+    /\?\s+for\s+shortcuts/i,                     // "? for shortcuts"
+    /────+/,                                     // Decorative lines
+    /^>\s+Try/m,                                 // "> Try" prompts (suggestions, not input)
+  ];
+
+  // If it's just informational, reduce confidence significantly
+  for (const pattern of isInformational) {
+    if (pattern.test(content)) {
+      confidence -= 0.8;
+    }
+  }
+
+  // Strong input patterns that actually need user response
+  const strongInputPatterns = [
+    /\(y\/n\)\s*$/i,                             // (y/n) prompts at end
     /press\s+any\s+key/i,                        // Press any key
     /enter\s+to\s+continue/i,                    // Enter to continue
     /waiting\s+for\s+(input|response)/i,         // Waiting for input/response
     /please\s+(enter|provide|input|type)/i,      // Please enter/provide/input
-    /^\s*>\s*$/m,                                // Prompt symbol >
-    /^\s*\$\s*$/m,                               // Shell prompt $
-    /:\s*$/,                                     // Ends with colon (prompts)
     /AskUserQuestion/,                           // Claude Code specific - asking question
-    /Would you like/i,                           // Would you like...
-    /Do you want/i,                              // Do you want...
-    /Which\s+\w+.*\?/i,                          // Which ... ?
-    /What\s+\w+.*\?/i,                           // What ... ?
-    /How\s+\w+.*\?/i,                            // How ... ?
-    /Should\s+\w+.*\?/i,                         // Should ... ?
-    /❯/,                                         // Selection cursor
+    /❯/,                                         // Selection cursor (interactive menu)
     /\[\s*\]/,                                   // Checkboxes [ ]
     /^\s*\d+\.\s+\[/m,                           // Numbered menu items with checkboxes
-    /\bNext\b|\bPrevious\b/,                     // Navigation indicators
+  ];
+
+  for (const pattern of strongInputPatterns) {
+    if (pattern.test(content)) {
+      confidence += 0.4;
+    }
+  }
+
+  // Weaker patterns (only boost slightly, need context)
+  const weakInputPatterns = [
+    /^\s*>\s*$/m,                                // Prompt symbol > (alone on line)
+    /^\s*\$\s*$/m,                               // Shell prompt $ (alone on line)
+    /Would you like/i,                           // Would you like...
+    /Do you want/i,                              // Do you want...
     /Select.*:/i,                                // Select prompts
     /Choose.*:/i,                                // Choose prompts
   ];
 
-  for (const pattern of inputPatterns) {
+  for (const pattern of weakInputPatterns) {
     if (pattern.test(content)) {
-      confidence += 0.3;
+      confidence += 0.15;
     }
   }
 
   // Strongly boost confidence if selection cursor is present (interactive menu)
-  if (content.includes('❯')) {
+  if (content.includes('❯') && !content.includes('Try')) {
     confidence += 0.5;
   }
 
   // Boost confidence if there's no recent activity indicators
   if (!content.includes('⏺') && !content.includes('...') && !content.includes('Processing')) {
-    confidence += 0.1;
+    confidence += 0.05;
   }
 
-  return { status: 'waiting_input', confidence: Math.min(confidence, 1.0) };
+  return { status: 'waiting_input', confidence: Math.min(Math.max(confidence, 0), 1.0) };
 }
 
 /**
