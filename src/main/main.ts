@@ -122,9 +122,12 @@ ipcMain.on('terminal-attach', async (event, sessionId: string, repositoryId: str
     const shell = process.platform === 'win32' ? 'powershell.exe' : (process.env.SHELL || '/bin/zsh');
     const workingDir = session.workingDirectory;
 
+    // Use -l flag for Unix shells to make it a login shell (sources profile files)
+    const shellArgs = process.platform === 'win32' ? [] : ['-l'];
+
     console.log(`Creating PTY for session ${sessionId} with shell:`, shell, 'in', workingDir);
 
-    const ptyProcess = pty.spawn(shell, [], {
+    const ptyProcess = pty.spawn(shell, shellArgs, {
       name: 'xterm-256color',
       cols: 80,
       rows: 30,
