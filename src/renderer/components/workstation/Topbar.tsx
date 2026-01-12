@@ -55,6 +55,36 @@ function Topbar({
 
       {/* Right side buttons */}
       <div className="flex items-center gap-2">
+        {/* Open in Finder Button */}
+        <button
+          onClick={() => {
+            if (sessionWorkingDirectory) {
+              window.electron.ipcRenderer.invoke('shell:openPath', sessionWorkingDirectory);
+            }
+          }}
+          disabled={!activeSessionId || !sessionWorkingDirectory}
+          className={`p-2 rounded-lg transition-colors ${
+            !activeSessionId || !sessionWorkingDirectory
+              ? 'bg-transparent text-white/30 cursor-not-allowed'
+              : 'bg-transparent text-white/50 hover:bg-white/10 hover:text-white/70'
+          }`}
+          title="Open in Finder"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" />
+          </svg>
+        </button>
+
         {/* Settings Button */}
         <button
           onClick={() => setSettingsOpen(true)}
