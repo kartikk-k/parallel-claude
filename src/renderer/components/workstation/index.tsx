@@ -197,42 +197,52 @@ export default function Workstation({ repository, isActive = true }: Workstation
           onViewChange={setActiveView}
         />
         </div>
-        <div className='bg- neutral-900/80 flex-1 relative'>
-        {activeView === 'terminal' ? (
-          sessions.length > 0 ? (
-            // Render all terminals but only show the active one
-            sessions.map((session) => (
-              <div
-                key={session.id}
-                className="absolute inset-0"
-                style={{
-                  visibility: session.id === activeSessionId ? 'visible' : 'hidden',
-                  zIndex: session.id === activeSessionId ? 1 : 0,
-                }}
-              >
+        <div className='bg-neutral-900/80 flex-1 relative'>
+          {/* Terminal layer - ALWAYS RENDERED */}
+          <div
+            className="absolute inset-0"
+            style={{
+              visibility: activeView === 'terminal' ? 'visible' : 'hidden',
+              zIndex: activeView === 'terminal' ? 10 : 0,
+              pointerEvents: activeView === 'terminal' ? 'auto' : 'none'
+            }}
+          >
+            {sessions.length > 0 ? (
+              // Render all terminals - they stay mounted
+              sessions.map((session) => (
                 <Terminal
+                  key={session.id}
                   sessionId={session.id}
                   repositoryId={repositoryId!}
-                  isActive={session.id === activeSessionId}
+                  isActive={activeView === 'terminal' && session.id === activeSessionId}
                 />
-              </div>
-            ))
-          ) : (
-            <div className="flex items-center justify-center h-full text-white/50">
-              <div className="text-center">
-                <p className="text-xl mb-4">No sessions yet</p>
-                <button
-                  onClick={() => handleCreateSession()}
-                  className="px-6 py-3 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
+              ))
+            ) : (
+              <div className="flex items-center justify-center h-full text-white/50">
+                <div className="text-center">
+                  <p className="text-xl mb-4">No sessions yet</p>
+                  <button
+                    onClick={() => handleCreateSession()}
+                    className="px-6 py-3 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
                   >
-                  Create First Session
-                </button>
+                    Create First Session
+                  </button>
+                </div>
               </div>
-            </div>
-          )
-        ) : (
-          <BrowserPreview />
-        )}
+            )}
+          </div>
+
+          {/* Preview layer - ALWAYS RENDERED */}
+          <div
+            className="absolute inset-0"
+            style={{
+              visibility: activeView === 'preview' ? 'visible' : 'hidden',
+              zIndex: activeView === 'preview' ? 10 : 0,
+              pointerEvents: activeView === 'preview' ? 'auto' : 'none'
+            }}
+          >
+            <BrowserPreview />
+          </div>
         </div>
       </div>
       </div>

@@ -96,14 +96,8 @@ ipcMain.on('ipc-example', async (event, arg) => {
 ipcMain.on('terminal-attach', async (event, sessionId: string, repositoryId: string) => {
   // Check if process already exists (reattach scenario)
   if (ptyProcesses.has(sessionId)) {
-    console.log(`PTY session ${sessionId} already exists, reattaching...`);
-    // Process continues running, just notify UI it's attached
-    // Broadcast to all windows
-    windows.forEach((window) => {
-      if (window && !window.isDestroyed()) {
-        window.webContents.send('terminal-attached', sessionId);
-      }
-    });
+    // PTY already exists and is running, nothing to do
+    // TerminalManager will reuse the existing connection
     return;
   }
 
@@ -216,9 +210,9 @@ ipcMain.on('terminal-resize', (event, sessionId: string, { cols, rows }: { cols:
 });
 
 ipcMain.on('terminal-detach', (event, sessionId: string) => {
-  // UI is detaching from this terminal, but process continues running
-  console.log(`PTY session ${sessionId} detached from UI (process still running)`);
-  // Process stays alive in ptyProcesses map for later reattachment
+  // UI component is detaching (unmounting), but PTY process stays alive
+  // TerminalManager handles the xterm lifecycle separately from PTY
+  // Only truly destroy PTY on 'terminal-destroy' event
 });
 
 ipcMain.on('terminal-destroy', (event, sessionId: string) => {
