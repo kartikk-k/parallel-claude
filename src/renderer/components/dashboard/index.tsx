@@ -16,6 +16,7 @@ export default function Dashboard() {
   const [recentRepositories, setRecentRepositories] = useState<Repository[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [isAddingRepository, setIsAddingRepository] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const loadRepositories = useCallback(async () => {
@@ -62,30 +63,40 @@ export default function Dashboard() {
   const handleSelectRepository = useCallback(async () => {
     try {
       setError(null);
+      setIsAddingRepository(true);
       const repository = await window.electron.ipcRenderer.invoke('repository:select');
       if (repository) {
         openRepositoryInTab(repository);
+        // Reload repositories to update the dashboard
+        await loadRepositories();
       }
     } catch (err: any) {
       console.error('Failed to select repository:', err);
       setError(err.message || 'This folder is not a Git repository');
       setTimeout(() => setError(null), 5000);
+    } finally {
+      setIsAddingRepository(false);
     }
-  }, [openRepositoryInTab]);
+  }, [openRepositoryInTab, loadRepositories]);
 
   const handleDropRepository = useCallback(async (path: string) => {
     try {
       setError(null);
+      setIsAddingRepository(true);
       const repository = await window.electron.ipcRenderer.invoke('repository:select', path);
       if (repository) {
         openRepositoryInTab(repository);
+        // Reload repositories to update the dashboard
+        await loadRepositories();
       }
     } catch (err: any) {
       console.error('Failed to add repository:', err);
       setError(err.message || 'This folder is not a Git repository');
       setTimeout(() => setError(null), 5000);
+    } finally {
+      setIsAddingRepository(false);
     }
-  }, [openRepositoryInTab]);
+  }, [openRepositoryInTab, loadRepositories]);
 
   const handleOpenRepository = useCallback(async (repository: Repository) => {
     try {
@@ -99,6 +110,14 @@ export default function Dashboard() {
   const handleDeleteRepository = useCallback(async (repository: Repository) => {
     try {
       await window.electron.ipcRenderer.invoke('repository:delete', repository.id);
+
+      // Close any open tabs for this repository
+      const { tabs, removeTab } = useTabStore.getState();
+      const tabsToClose = tabs.filter(
+        (tab) => tab.type === 'repository' && tab.repository?.id === repository.id
+      );
+      tabsToClose.forEach((tab) => removeTab(tab.id));
+
       // Reload repositories after deletion
       await loadRepositories();
     } catch (err) {
@@ -126,7 +145,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="h-full text-white p-1.5 flex flex-col">
+    <div className={`h-full text-white p-1.5 flex flex-col ${isAddingRepository ? 'cursor-wait' : ''}`}>
       <div className="mx-auto bg-neutral-800/40 p-4 rounded-lg flex-1 w-full h-full overflow-y-auto">
         <DashboardHeader />
 

@@ -12,6 +12,7 @@ interface SidebarProps {
   onCreateSession: (title?: string) => void;
   onRenameSession: (id: string, newTitle: string) => void;
   onGoHome?: () => void;
+  isCreatingSession?: boolean;
 }
 
 export default function Sidebar({
@@ -23,6 +24,7 @@ export default function Sidebar({
   onCreateSession,
   onRenameSession,
   onGoHome,
+  isCreatingSession,
 }: SidebarProps) {
   return (
     <div className="w-64 flex flex-col">
@@ -31,6 +33,7 @@ export default function Sidebar({
       <SidebarNavigation
         onCreateSession={onCreateSession}
         onGoHome={onGoHome}
+        isCreatingSession={isCreatingSession}
       />
 
       <SessionsList

@@ -24,6 +24,7 @@ export default function Workstation({ repository, isActive = true }: Workstation
   const [sessions, setSessions] = useState<SessionMetadata[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCreatingSession, setIsCreatingSession] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const [activeView, setActiveView] = useState<'terminal' | 'preview'>('terminal');
@@ -63,6 +64,7 @@ export default function Workstation({ repository, isActive = true }: Workstation
   const handleCreateSession = useCallback(async (title?: string) => {
     try {
       setError(null);
+      setIsCreatingSession(true);
       const newSession = await window.electron.ipcRenderer.invoke(
         'session:create',
         repositoryId,
@@ -77,6 +79,8 @@ export default function Workstation({ repository, isActive = true }: Workstation
     } catch (err: any) {
       console.error('Failed to create session:', err);
       setError(err.message || 'Failed to create session');
+    } finally {
+      setIsCreatingSession(false);
     }
   }, [repositoryId, sessions]);
 
@@ -181,7 +185,7 @@ export default function Workstation({ repository, isActive = true }: Workstation
   return (
     <>
     <KeyboardHandler repositoryId={repositoryId} />
-    <div className="flex h-full text-white">
+    <div className={`flex h-full text-white ${isCreatingSession ? 'cursor-wait' : ''}`}>
       {/* Left Sidebar */}
       <div className='p-1.5 pr-0'>
         <div className='bg-neutral-800/40 h-full rounded-lg'>
@@ -194,6 +198,7 @@ export default function Workstation({ repository, isActive = true }: Workstation
         onCreateSession={handleCreateSession}
         onRenameSession={handleRenameSession}
         onGoHome={handleGoHome}
+        isCreatingSession={isCreatingSession}
         />
         </div>
         </div>

@@ -64,8 +64,10 @@ export class GitService {
         fs.mkdirSync(parentDir, { recursive: true });
       }
 
-      // Use cp -r to copy entire directory (faster than git clone for local repos)
-      await execAsync(`cp -r "${sourcePath}" "${targetPath}"`);
+      // Use rsync with exclusions to copy directory (excludes node_modules and other common large folders)
+      // --exclude patterns: node_modules, .next, .turbo, dist, build, coverage, etc.
+      const rsyncCommand = `rsync -a --exclude='node_modules' --exclude='.next' --exclude='dist' --exclude='build' --exclude='.turbo' --exclude='.cache' --exclude='*.log' "${sourcePath}/" "${targetPath}"`;
+      await execAsync(rsyncCommand);
 
       // Checkout the base branch in the cloned repo
       await execAsync(`git checkout ${baseBranch}`, { cwd: targetPath });
@@ -83,6 +85,7 @@ export class GitService {
       throw new Error(`Failed to clone repository: ${error}`);
     }
   }
+
 
   async createBranch(
     repoPath: string,
