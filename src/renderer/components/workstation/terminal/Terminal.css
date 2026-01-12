@@ -1,0 +1,26 @@
+/* Terminal wrapper - container for xterm instance */
+.terminal-wrapper {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0.5rem;
+  background-color: rgba(0, 0, 0, 0);
+}
+
+/* Hidden state - not needed since TerminalManager handles display */
+.terminal-wrapper.hidden {
+  /* Container is always visible, but xterm-instance inside is hidden */
+  pointer-events: none;
+}
+
+/* Active state */
+.terminal-wrapper.active {
+  pointer-events: auto;
+}
+
+/* XTerm instance - managed by TerminalManager */
+.xterm-instance {
+  width: 100%;
+  height: 100%;
+}
