@@ -28,7 +28,7 @@ function Topbar({
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   return (
-    <div className='h-[42px] flex items-center justify-between px-4'>
+    <div className='h-[42px] flex items-center justify-between px-1'>
       {/* View Tabs */}
       <div className="flex items-center gap-1">
         <button

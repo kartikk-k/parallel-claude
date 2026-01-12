@@ -56,6 +56,17 @@ const sessionService = new SessionService(storageService, gitService, repository
 registerRepositoryHandlers(repositoryService, gitService);
 registerSessionHandlers(sessionService, gitService);
 
+// Shell handler to open paths in Finder
+ipcMain.handle('shell:openPath', async (event, path: string) => {
+  try {
+    await shell.openPath(path);
+    return { success: true };
+  } catch (error) {
+    console.error('Error opening path:', error);
+    throw error;
+  }
+});
+
 // Function to get the currently active application bundle ID (macOS)
 const getActiveAppBundleId = (): Promise<string | null> => {
   return new Promise((resolve) => {
