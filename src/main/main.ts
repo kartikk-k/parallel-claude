@@ -414,6 +414,10 @@ const createWindow = async (initialRoute?: string) => {
       if (!newWindow) {
         throw new Error('"newWindow" is not defined');
       }
+
+      // Set default zoom to 90%
+      newWindow.webContents.setZoomFactor(0.9);
+
       if (process.env.START_MINIMIZED) {
         newWindow.minimize();
       } else {
@@ -457,7 +461,7 @@ const createWindow = async (initialRoute?: string) => {
   // Handle window focus events
   newWindow.on('focus', () => {
     try {
-      if (newWindow && !newWindow.isDestroyed()) {
+      if (newWindow && !newWindow.isDestroyed() && newWindow.webContents && !newWindow.webContents.isDestroyed()) {
         newWindow.webContents.send('window-focus', true);
       }
     } catch (err) {
@@ -467,7 +471,7 @@ const createWindow = async (initialRoute?: string) => {
 
   newWindow.on('blur', () => {
     try {
-      if (newWindow && !newWindow.isDestroyed()) {
+      if (newWindow && !newWindow.isDestroyed() && newWindow.webContents && !newWindow.webContents.isDestroyed()) {
         newWindow.webContents.send('window-focus', false);
       }
     } catch (err) {
@@ -594,9 +598,10 @@ const createWindow = async (initialRoute?: string) => {
 
   // Register Cmd+N shortcut to open new window (only register once)
   if (windows.size === 0) {
-    globalShortcut.register('CommandOrControl+N', async () => {
-      await createWindow('/'); // Open new window with Dashboard
-    });
+    // Disabled: Cmd+N shortcut for new window
+    // globalShortcut.register('CommandOrControl+N', async () => {
+    //   await createWindow('/'); // Open new window with Dashboard
+    // });
 
     // Register global shortcut for toggling window visibility (only register once)
     globalShortcut.register('CommandOrControl+\\', async () => {

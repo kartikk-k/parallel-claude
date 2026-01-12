@@ -4,7 +4,10 @@ import { TabBar } from './components/tabs';
 import TabContent from './components/TabContent';
 import { useTabStore } from './store/tabStore';
 import { KEYBOARD_SHORTCUTS } from './constants';
-import("react-grab");
+
+if(process.env.NODE_ENV === 'development') {
+  import("react-grab");
+}
 
 export default function App() {
   const { tabs, activeTabId, setActiveTab } = useTabStore();
