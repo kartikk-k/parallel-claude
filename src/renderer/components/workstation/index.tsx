@@ -197,7 +197,7 @@ export default function Workstation({ repository, isActive = true }: Workstation
           onViewChange={setActiveView}
         />
         </div>
-        <div className='bg-neutral-900/80 flex-1 relative'>
+        <div className='bg-neutral-900/60 flex-1 relative'>
           {/* Terminal layer - ALWAYS RENDERED */}
           <div
             className="absolute inset-0"
