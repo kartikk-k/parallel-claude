@@ -135,6 +135,18 @@ export default function Workstation({ repository, isActive = true }: Workstation
     }
   }, [repositoryId, sessions]);
 
+  const handleSettingsSaved = useCallback(async () => {
+    try {
+      const sessionsList = await window.electron.ipcRenderer.invoke(
+        'session:getByRepository',
+        repositoryId
+      );
+      setSessions(sessionsList);
+    } catch (err) {
+      console.error('Failed to reload sessions:', err);
+    }
+  }, [repositoryId]);
+
   const handleGoHome = useCallback(async () => {
     // Switch to dashboard tab
     const tabs = useTabStore.getState().tabs;
@@ -195,6 +207,11 @@ export default function Workstation({ repository, isActive = true }: Workstation
           repositoryId={repositoryId}
           activeView={activeView}
           onViewChange={setActiveView}
+          activeSessionId={activeSessionId}
+          sessionTitle={sessions.find(s => s.id === activeSessionId)?.title}
+          sessionPreviewUrl={sessions.find(s => s.id === activeSessionId)?.previewUrl}
+          sessionWorkingDirectory={sessions.find(s => s.id === activeSessionId)?.workingDirectory}
+          onSettingsSaved={handleSettingsSaved}
         />
         </div>
         <div className='bg-neutral-900/60 flex-1 relative'>
