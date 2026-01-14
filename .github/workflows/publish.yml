@@ -1,47 +1,59 @@
 name: Publish
 
 on:
-  push:
-    branches:
-      - main
+  release:
+    types: [created]
+  workflow_dispatch:
 
 jobs:
   publish:
-    # To enable auto publishing to github, update your electron publisher
-    # config in package.json > "build" and remove the conditional below
-    if: ${{ github.repository_owner == 'electron-react-boilerplate' }}
-
     runs-on: ${{ matrix.os }}
 
     strategy:
       matrix:
-        os: [macos-latest]
+        os: [macos-latest, ubuntu-latest, windows-latest]
 
     steps:
       - name: Checkout git repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install Node and NPM
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
 
-      - name: Install and build
+      - name: Install dependencies
         run: |
           npm install
+
+      - name: Install and build
+        run: |
           npm run postinstall
           npm run build
 
-      - name: Publish releases
+      - name: Build and publish (macOS)
+        if: matrix.os == 'macos-latest'
         env:
-          # The APPLE_* values are used for auto updates signing
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_ID_PASS }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           CSC_LINK: ${{ secrets.CSC_LINK }}
           CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
-          # This is used for uploading release assets to github
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          npm exec electron-builder -- --publish always --win --mac --linux
+          npm exec electron-builder -- --publish always --mac
+
+      - name: Build and publish (Windows)
+        if: matrix.os == 'windows-latest'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          npm exec electron-builder -- --publish always --win
+
+      - name: Build and publish (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          npm exec electron-builder -- --publish always --linux
