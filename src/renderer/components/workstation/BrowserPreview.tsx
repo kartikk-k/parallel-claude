@@ -119,35 +119,51 @@ export default function BrowserPreview({
     }
   };
 
-  // Smart URL parser to handle various input formats
+  // Smart URL parser to handle various input formats, with basic validation
   const parseUrl = (input: string): string => {
     const trimmed = input.trim();
 
+    const DEFAULT_URL = 'http://localhost:3000';
+
     // If empty, return default
     if (!trimmed) {
-      return 'http://localhost:3000';
+      return DEFAULT_URL;
     }
 
-    // If already has protocol, return as-is
-    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
-      return trimmed;
+    let candidate = trimmed;
+
+    // If already has protocol, use as-is
+    if (candidate.startsWith('http://') || candidate.startsWith('https://')) {
+      // keep candidate as-is
+    } else {
+      // Check if input starts with a number (port number or port with path)
+      const portMatch = candidate.match(/^(\d+)(\/.*)?$/);
+      if (portMatch) {
+        const port = portMatch[1];
+        const path = portMatch[2] || '';
+        candidate = `http://localhost:${port}${path}`;
+      } else if (candidate.startsWith('localhost')) {
+        // If starts with localhost, add http://
+        candidate = `http://${candidate}`;
+      } else {
+        // For other URLs (like example.com), add https://
+        candidate = `https://${candidate}`;
+      }
     }
 
-    // Check if input starts with a number (port number or port with path)
-    const portMatch = trimmed.match(/^(\d+)(\/.*)?$/);
-    if (portMatch) {
-      const port = portMatch[1];
-      const path = portMatch[2] || '';
-      return `http://localhost:${port}${path}`;
-    }
+    try {
+      const parsed = new URL(candidate);
 
-    // If starts with localhost, add http://
-    if (trimmed.startsWith('localhost')) {
-      return `http://${trimmed}`;
-    }
+      // Allow only http and https protocols
+      if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+        return DEFAULT_URL;
+      }
 
-    // For other URLs (like example.com), add https://
-    return `https://${trimmed}`;
+      return parsed.toString();
+    } catch {
+      // If URL construction fails, fall back to default
+      return DEFAULT_URL;
+    }
   };
 
   const handleRefresh = () => {
